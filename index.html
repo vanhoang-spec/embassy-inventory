@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embassy Language – Quản Lý Tồn Kho</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--navy:#1a2e5a;--navy-light:#243a6e;--navy-dark:#111e3d;--red:#e8192c;--red-dark:#c0121f;--white:#fff;--gray-50:#f8f9fc;--gray-100:#f0f2f7;--gray-200:#e2e6ef;--gray-300:#c8cfe0;--gray-400:#9aa3bc;--gray-600:#5a6480;--gray-700:#3d4560;--gray-800:#252d45;--green:#16a34a;--green-light:#dcfce7;--orange:#ea580c;--orange-light:#fff7ed;--yellow:#ca8a04;--yellow-light:#fefce8;--shadow-sm:0 1px 3px rgba(26,46,90,.08);--shadow-md:0 4px 12px rgba(26,46,90,.12);--shadow-lg:0 8px 24px rgba(26,46,90,.16);--radius:10px;--radius-sm:6px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--gray-50);color:var(--gray-800);font-size:14px;}
+.header{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 60%,var(--navy-light) 100%);color:white;position:sticky;top:0;z-index:1000;box-shadow:var(--shadow-lg);}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;gap:12px;flex-wrap:wrap;}
+.header-logo{display:flex;align-items:center;gap:12px;}
+.logo-img{height:48px;width:auto;background:white;border-radius:8px;padding:3px 7px;}
+.logo-text h1{font-size:17px;font-weight:700;}
+.logo-text p{font-size:11px;opacity:.75;margin-top:2px;}
+.header-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;white-space:nowrap;}
+.btn-white{background:white;color:var(--navy);}.btn-white:hover{background:var(--gray-100);}
+.btn-red{background:var(--red);color:white;}.btn-red:hover{background:var(--red-dark);}
+.btn-outline{background:transparent;color:white;border:1.5px solid rgba(255,255,255,.5);}.btn-outline:hover{background:rgba(255,255,255,.1);border-color:white;}
+.btn-green{background:var(--green);color:white;}.btn-green:hover{background:#15803d;}
+.btn-navy{background:var(--navy);color:white;}.btn-navy:hover{background:var(--navy-dark);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-danger{background:#fee2e2;color:var(--red);border:1px solid #fca5a5;}.btn-danger:hover{background:#fca5a5;}
+.alert-bar{background:linear-gradient(90deg,#fff0f0,#fff5f5);border-bottom:2px solid var(--red);padding:7px 20px;display:none;align-items:center;gap:10px;font-size:13px;color:var(--red-dark);}
+.alert-bar.show{display:flex;}
+.alert-items{display:flex;flex-wrap:wrap;gap:5px;}
+.alert-chip{background:var(--red);color:white;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.layout{display:flex;min-height:calc(100vh - 76px);}
+.sidebar{width:250px;min-width:210px;background:white;border-right:1px solid var(--gray-200);display:flex;flex-direction:column;position:sticky;top:76px;height:calc(100vh - 76px);overflow-y:auto;}
+.sidebar-section{padding:10px 0;border-bottom:1px solid var(--gray-100);}
+.sidebar-label{font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;padding:0 14px 5px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;transition:all .15s;color:var(--gray-700);font-size:13px;font-weight:500;border-left:3px solid transparent;}
+.nav-item:hover{background:var(--gray-50);color:var(--navy);}
+.nav-item.active{background:#eef1f9;color:var(--navy);border-left-color:var(--navy);font-weight:700;}
+.nav-icon{font-size:15px;width:18px;text-align:center;}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
+.main{flex:1;padding:18px 20px;overflow-x:auto;}
+.page{display:none;}.page.active{display:block;}
+.card{background:white;border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);margin-bottom:14px;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.card-title{font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px;}
+.card-body{padding:14px 16px;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}
+.stat-card{background:white;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);display:flex;align-items:center;gap:12px;}
+.stat-icon{width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.stat-icon.navy{background:#eef1f9;}.stat-icon.red{background:#fff0f0;}.stat-icon.green{background:var(--green-light);}.stat-icon.orange{background:var(--orange-light);}
+.stat-value{font-size:20px;font-weight:800;color:var(--navy);line-height:1;}
+.stat-label{font-size:11px;color:var(--gray-400);margin-top:3px;font-weight:500;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--navy);color:white;padding:9px 11px;text-align:left;font-weight:600;font-size:12px;white-space:nowrap;}
+td{padding:8px 11px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+tr:hover td{background:var(--gray-50);}
+tr.alert-row td{background:#fff0f0!important;}
+tr.alert-row:hover td{background:#ffe4e4!important;}
+tr.alert-row td:first-child{border-left:3px solid var(--red);}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-red{background:#fff0f0;color:var(--red);}
+.badge-orange{background:var(--orange-light);color:var(--orange);}
+.badge-navy{background:#eef1f9;color:var(--navy);}
+.badge-gray{background:var(--gray-100);color:var(--gray-600);}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:12px;font-weight:600;color:var(--gray-700);}
+label .req{color:var(--red);}
+input,select,textarea{padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:13px;color:var(--gray-800);background:white;transition:border .2s;width:100%;font-family:inherit;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,46,90,.08);}
+input[readonly]{background:var(--gray-50);color:var(--gray-600);}
+.form-hint{font-size:11px;color:var(--gray-400);}
+.form-section{margin-bottom:18px;}
+.form-section-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--gray-100);display:flex;align-items:center;gap:6px;}
+.num-group{display:flex;align-items:center;}
+.num-group input{border-radius:var(--radius-sm) 0 0 var(--radius-sm);}
+.num-group .unit{background:var(--gray-100);border:1.5px solid var(--gray-200);border-left:none;padding:7px 9px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:12px;color:var(--gray-600);white-space:nowrap;}
+.modal-overlay{position:fixed;inset:0;background:rgba(17,30,61,.55);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.show{display:flex;}
+.modal{background:white;border-radius:14px;box-shadow:var(--shadow-lg);width:100%;max-width:700px;max-height:92vh;overflow-y:auto;}
+.modal-lg{max-width:880px;}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1;border-radius:14px 14px 0 0;}
+.modal-title{font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px;}
+.modal-close{background:var(--gray-100);border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;color:var(--gray-600);transition:all .2s;}
+.modal-close:hover{background:var(--gray-200);}
+.modal-body{padding:18px 20px;}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:9px;position:sticky;bottom:0;background:white;border-radius:0 0 14px 14px;}
+.branch-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.branch-tab{padding:5px 12px;border-radius:20px;border:1.5px solid var(--gray-200);cursor:pointer;font-size:12px;font-weight:600;color:var(--gray-600);transition:all .2s;background:white;}
+.branch-tab:hover{border-color:var(--navy);color:var(--navy);}
+.branch-tab.active{background:var(--navy);color:white;border-color:var(--navy);}
+.filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.filter-bar input,.filter-bar select{width:auto;min-width:130px;}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.cat-card{background:white;border:2px solid var(--gray-200);border-radius:var(--radius);padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.cat-card:hover{border-color:var(--navy);box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.cat-card.selected{border-color:var(--navy);background:#eef1f9;}
+.cat-icon{font-size:30px;margin-bottom:7px;}
+.cat-name{font-size:13px;font-weight:700;color:var(--navy);}
+.cat-count{font-size:11px;color:var(--gray-400);margin-top:2px;}
+.cat-alert{position:absolute;top:5px;right:5px;background:var(--red);color:white;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px;}
+.cat-edit-btn{position:absolute;top:5px;left:5px;background:var(--gray-100);border:none;border-radius:4px;padding:2px 5px;font-size:11px;cursor:pointer;color:var(--gray-600);display:none;}
+.cat-card:hover .cat-edit-btn{display:block;}
+.divider{border:none;border-top:1px solid var(--gray-100);margin:14px 0;}
+.text-right{text-align:right;}.text-center{text-align:center;}
+.text-red{color:var(--red);}.text-green{color:var(--green);}.text-navy{color:var(--navy);}.text-gray{color:var(--gray-400);}
+.fw-bold{font-weight:700;}.mt-8{margin-top:8px;}.mt-12{margin-top:12px;}
+.empty-state{text-align:center;padding:36px 20px;color:var(--gray-400);}
+.empty-icon{font-size:44px;margin-bottom:10px;}
+.info-box{background:#eef1f9;border-left:4px solid var(--navy);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--navy);margin-bottom:12px;}
+.warn-box{background:var(--orange-light);border-left:4px solid var(--orange);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--orange);margin-bottom:12px;}
+.success-box{background:var(--green-light);border-left:4px solid var(--green);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--green);margin-bottom:12px;}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px;}
+.toast{background:var(--navy);color:white;padding:11px 16px;border-radius:var(--radius);box-shadow:var(--shadow-lg);font-size:13px;font-weight:500;display:flex;align-items:center;gap:9px;min-width:240px;animation:slideIn .3s ease;}
+.toast.success{background:var(--green);}.toast.error{background:var(--red);}.toast.warning{background:var(--orange);}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;}
+.settings-card{background:white;border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px;}
+.settings-card h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:11px;display:flex;align-items:center;gap:6px;}
+.progress-bar{height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden;margin-top:4px;}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s;}
+.progress-fill.green{background:var(--green);}.progress-fill.orange{background:var(--orange);}.progress-fill.red{background:var(--red);}
+.fifo-tag{font-size:10px;background:#eef1f9;color:var(--navy);padding:1px 5px;border-radius:10px;font-weight:600;}
+.summary-table th{background:var(--navy-dark);}
+.summary-table tr.subtotal td{background:#eef1f9;font-weight:700;}
+.summary-table tr.grand-total td{background:var(--navy);color:white;font-weight:700;}
+#syncStatusBar{display:none;}
+#syncStatusBar.show{display:flex!important;}
+.sync-pulse{animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.exp-type-label{display:flex;align-items:center;gap:6px;cursor:pointer;padding:7px 13px;border:2px solid var(--gray-200);border-radius:8px;font-size:13px;font-weight:600;transition:all .2s;}
+.exp-type-label input{width:auto;}
+.price-history{font-size:11px;color:var(--gray-400);margin-top:4px;max-height:80px;overflow-y:auto;border:1px solid var(--gray-100);border-radius:4px;padding:4px 6px;}
+.price-history-item{padding:2px 0;border-bottom:1px solid var(--gray-100);}
+.entity-card{background:white;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.entity-name{font-size:13px;font-weight:600;color:var(--navy);}
+.gs-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.gs-status.connected{background:var(--green-light);color:var(--green);}
+.gs-status.disconnected{background:var(--gray-100);color:var(--gray-400);}
+.gs-status.syncing{background:var(--yellow-light);color:var(--yellow);}
+@media(max-width:768px){.sidebar{display:none;}.stats-grid{grid-template-columns:repeat(2,1fr);}.form-grid{grid-template-columns:1fr;}}
+@media print{.header,.sidebar,.header-actions,.filter-bar,.btn,.modal-overlay{display:none!important;}.main{padding:0;}.card{box-shadow:none;border:1px solid #ccc;}body{background:white;}}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <img src="uploaded_files/EmbassyLanguage_Logo_nen trong.png" alt="Embassy Language" class="logo-img" onerror="this.style.display='none'">
+      <div class="logo-text"><h1>🏪 Quản Lý Tồn Kho Vật Phẩm</h1><p>Embassy Language – Hệ thống theo dõi nhập xuất tồn kho</p></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="openModal('modal-import')">📥 Nhập hàng</button>
+      <button class="btn btn-outline" onclick="openModal('modal-export')">📤 Xuất hàng</button>
+      <button class="btn btn-outline" id="btnSyncGS" onclick="syncAllToGS()" title="Đồng bộ lên Google Sheets">☁️ Sync</button>
+      <button class="btn btn-outline" id="btnLoadGS" onclick="loadFromGS()" title="Tải dữ liệu từ Google Sheets">🔄 Tải GS</button>
+      <button class="btn btn-white" onclick="exportExcel()">📊 Xuất Excel</button>
+      <button class="btn btn-red" onclick="exportPDF()">📄 Xuất PDF</button>
+    </div>
+  </div>
+</div>
+<div class="alert-bar" id="alertBar">
+  <span>🔴</span><strong>CẢNH BÁO TỒN KHO THẤP:</strong>
+  <div class="alert-items" id="alertItems"></div>
+</div>
+<div id="syncStatusBar" style="display:none;background:linear-gradient(90deg,#eef1f9,#f0f4ff);border-bottom:1px solid var(--gray-200);padding:6px 20px;font-size:12px;color:var(--navy);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <span id="syncStatusIcon">☁️</span>
+  <span id="syncStatusText">Đang kết nối Google Sheets...</span>
+  <span style="margin-left:auto;color:var(--gray-400)" id="syncStatusTime"></span>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tổng quan</div>
+      <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span> Dashboard</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Vật phẩm</div>
+      <div class="nav-item" onclick="showPage('categories')"><span class="nav-icon">📦</span> Danh mục vật phẩm</div>
+      <div class="nav-item" onclick="showPage('inventory')"><span class="nav-icon">🗂️</span> Tồn kho chi tiết <span class="nav-badge" id="alertBadge" style="display:none">!</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Giao dịch</div>
+      <div class="nav-item" onclick="showPage('imports')"><span class="nav-icon">📥</span> Lịch sử nhập hàng</div>
+      <div class="nav-item" onclick="showPage('exports')"><span class="nav-icon">📤</span> Lịch sử xuất hàng</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Báo cáo</div>
+      <div class="nav-item" onclick="showPage('report-branch')"><span class="nav-icon">🏢</span> Báo cáo theo CN</div>
+      <div class="nav-item" onclick="showPage('report-summary')"><span class="nav-icon">📋</span> Tổng hợp Embassy English</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Hệ thống</div>
+      <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span> Cài đặt & Alert</div>
+    </div>
+  </div>
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="card"><div class="card-header"><div class="card-title">🔴 Vật phẩm cần nhập thêm</div></div><div class="card-body" id="dashAlertList"><div class="empty-state"><div class="empty-icon">✅</div><p>Không có cảnh báo</p></div></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">📈 Giao dịch gần đây</div></div><div class="card-body" id="recentTx"><div class="empty-state"><div class="empty-icon">📭</div><p>Chưa có giao dịch</p></div></div></div>
+      </div>
+    </div>
+    <!-- CATEGORIES -->
+    <div class="page" id="page-categories">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📦 Danh mục vật phẩm</div><button class="btn btn-navy btn-sm" onclick="openAddCatModal()">+ Thêm danh mục</button></div>
+        <div class="card-body"><div class="info-box">💡 Chọn danh mục để xem chi tiết. Hover vào danh mục để chỉnh sửa.</div><div class="cat-grid" id="catGrid"></div></div>
+      </div>
+      <div class="card" id="catItemsCard" style="display:none">
+        <div class="card-header">
+          <div class="card-title" id="catItemsTitle">📋 Vật phẩm</div>
+          <div style="display:flex;gap:7px;"><button class="btn btn-navy btn-sm" onclick="openAddItemModal()">+ Thêm vật phẩm</button><button class="btn btn-white btn-sm" onclick="closeCatItems()">✕ Đóng</button></div>
+        </div>
+        <div class="card-body"><div class="table-wrap"><table><thead><tr><th>Tên vật phẩm</th><th>ĐVT</th><th>Giá bán định sẵn</th><th>Ngưỡng alert</th><th>Tồn kho (tất cả CN)</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="catItemsBody"></tbody></table></div></div>
+      </div>
+    </div>
+    <!-- INVENTORY -->
+    <div class="page" id="page-inventory">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗂️ Tồn kho chi tiết</div><div style="display:flex;gap:7px;"><button class="btn btn-white btn-sm" onclick="exportExcel()">📊 Excel</button><button class="btn btn-red btn-sm" onclick="exportPDF()">📄 PDF</button></div></div>
+        <div class="card-body">
+          <div class="branch-tabs" id="invBranchTabs"></div>
+          <div class="filter-bar">
+            <input type="text" id="invSearch" placeholder="🔍 Tìm vật phẩm..." oninput="renderInventory()">
+            <select id="invCatFilter" onchange="renderInventory()"><option value="">Tất cả danh mục</option></select>
+            <select id="invStatusFilter" onchange="renderInventory()"><option value="">Tất cả trạng thái</option><option value="ok">Bình thường</option><option value="alert">Cảnh báo thấp</option><option value="zero">Hết hàng</option></select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Danh mục</th><th>Vật phẩm</th><th>Chi nhánh</th><th>Tổng nhập</th><th>Tổng xuất</th><th>Tồn kho</th><th>Đơn giá FIFO</th><th>Giá trị tồn</th><th>Ngưỡng alert</th><th>Trạng thái</th></tr></thead><tbody id="invBody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <!-- IMPORTS -->
+    <div class="page" id="page-imports">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📥 Lịch sử nhập hàng</div><button class="btn btn-navy btn-sm" onclick="openModal('modal-import')">+ Nhập hàng mới</button></div>
+        <div class="card-body">
+          <div class="filter-bar">
+            <input type="text" id="impSearch" placeholder="🔍 Tìm kiếm..." oninput="renderImports()">
+            <select id="impBranchFilter" onchange="renderImports()"><option value="">Tất cả CN</option></select>
+            <select id="impCatFilter" onchange="renderImports()"><option value="">Tất cả danh mục</option></select>
+            <input type="date" id="impDateFrom" onchange="renderImports()" title="Từ ngày">
+            <input type="date" id="impDateTo" onchange="renderImports()" title="Đến ngày">
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Ngày</th><th>CN</th><th>Danh mục</th><th>Vật phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>VAT%</th><th>Tiền VAT</th><th>Tổng TT</th><th>Phí VC</th><th>Nhà cung cấp</th><th>Ghi chú</th><th></th></tr></thead><tbody id="impBody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <!-- EXPORTS -->
+    <div class="page" id="page-exports">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📤 Lịch sử xuất hàng</div><button class="btn btn-red btn-sm" onclick="openModal('modal-export')">+ Xuất hàng mới</button></div>
+        <div class="card-body">
+          <div class="filter-bar">
+            <input type="text" id="expSearch" placeholder="🔍 Tìm kiếm..." oninput="renderExports()">
+            <select id="expBranchFilter" onchange="renderExports()"><option value="">Tất cả CN</option></select>
+            <select id="expTypeFilter" onchange="renderExports()"><option value="">Tất cả loại xuất</option><option value="gift">Xuất tặng</option><option value="sell">Xuất bán</option><option value="transfer">Xuất chuyển CN</option><option value="dispose">Xuất bỏ</option></select>
+            <input type="date" id="expDateFrom" onchange="renderExports()" title="Từ ngày">
+            <input type="date" id="expDateTo" onchange="renderExports()" title="Đến ngày">
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>#</th><th>Ngày</th><th>CN</th><th>Danh mục</th><th>Vật phẩm</th><th>Loại xuất</th><th>SL</th><th>Đơn giá xuất</th><th>Thành tiền</th><th>CN nhận</th><th>Ghi chú</th><th></th></tr></thead><tbody id="expBody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <!-- REPORT BRANCH -->
+    <div class="page" id="page-report-branch">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏢 Báo cáo theo Chi nhánh</div><div style="display:flex;gap:7px;"><button class="btn btn-white btn-sm" onclick="exportExcel('branch')">📊 Excel</button><button class="btn btn-red btn-sm" onclick="exportPDF('branch')">📄 PDF</button></div></div>
+        <div class="card-body"><div class="branch-tabs" id="rptBranchTabs"></div><div id="rptBranchContent"></div></div>
+      </div>
+    </div>
+    <!-- REPORT SUMMARY -->
+    <div class="page" id="page-report-summary">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 Tổng hợp Công ty CP Embassy English (NT+MC+CL+QN)</div><div style="display:flex;gap:7px;"><button class="btn btn-white btn-sm" onclick="exportExcel('summary')">📊 Excel</button><button class="btn btn-red btn-sm" onclick="exportPDF('summary')">📄 PDF</button></div></div>
+        <div class="card-body"><div class="info-box">📌 Bảng tổng hợp dành cho kế toán tính toán xuất hóa đơn – Công ty CP Embassy English (NT, MC, CL, QN)</div><div id="summaryContent"></div></div>
+      </div>
+    </div>
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h4>🔔 Ngưỡng Alert tồn kho</h4>
+          <div class="form-group"><label>% trên tổng order ban đầu</label><div class="num-group"><input type="number" id="alertPct" value="10" min="1" max="100"><span class="unit">%</span></div></div>
+          <div class="form-group mt-8"><label>Số lượng tối thiểu</label><input type="number" id="alertQty" value="20" min="1"></div>
+          <div class="form-hint mt-8">Alert khi tồn ≤ MAX(tổng order × %, số lượng tối thiểu)</div>
+          <button class="btn btn-navy btn-sm mt-12" onclick="saveAlertSettings()">💾 Lưu cài đặt</button>
+        </div>
+        <div class="settings-card">
+          <h4>📧 Email báo cáo tự động</h4>
+          <div class="form-group"><label>Email nhận</label><input type="email" id="emailRecipient" value="info@embassy.edu.vn"></div>
+          <div class="form-group mt-8"><label>Thời điểm gửi</label><input type="text" value="24:00 ngày cuối tháng" readonly></div>
+          <div class="form-group mt-8"><label>Tiêu đề email</label><input type="text" id="emailSubject" value="Cập nhật file tồn kho vật phẩm vào cuối tháng {MM/YYYY}"></div>
+          <div class="warn-box mt-8">⚠️ Gửi email tự động cần tích hợp backend. Hệ thống sẽ nhắc nhở và cho phép xuất file thủ công.</div>
+          <button class="btn btn-navy btn-sm" onclick="saveEmailSettings()">💾 Lưu cài đặt</button>
+          <button class="btn btn-green btn-sm mt-8" onclick="simulateMonthlyExport()">📤 Xuất báo cáo tháng ngay</button>
+        </div>
+        <div class="settings-card">
+          <h4>💰 Giá bán định sẵn</h4>
+          <div class="info-box" style="font-size:11px">💡 Thay đổi giá có hiệu lực từ thời điểm lưu. Lịch sử giá được lưu lại tự động.</div>
+          <div id="priceDefaults"></div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button class="btn btn-navy btn-sm" onclick="openAddPriceItemModal()">+ Thêm vật phẩm</button>
+            <button class="btn btn-green btn-sm" onclick="savePriceDefaults()">💾 Lưu giá</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h4>🏢 Quản lý Chi nhánh &amp; Pháp nhân</h4>
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">PHÁP NHÂN</div>
+            <div id="entityList"></div>
+            <button class="btn btn-white btn-sm mt-8" style="border:1px solid var(--gray-200)" onclick="openModal('modal-add-entity')">+ Thêm pháp nhân</button>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">CHI NHÁNH</div>
+          <div id="branchList" style="margin-top:6px"></div>
+          <button class="btn btn-navy btn-sm mt-8" onclick="openModal('modal-add-branch')">+ Thêm chi nhánh</button>
+        </div>
+        <div class="settings-card" style="grid-column:1/-1" id="gsSettingsCard">
+          <h4>🔗 Tích hợp Google Sheets (Realtime Sync)
+            <span id="gsLockBadge" style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:#fee2e2;color:var(--red);font-weight:600">🔒 Khóa</span>
+          </h4>
+          <!-- Lock overlay -->
+          <div id="gsLockOverlay" style="background:#f8f9fc;border:2px dashed var(--gray-200);border-radius:8px;padding:24px;text-align:center;margin-bottom:0">
+            <div style="font-size:32px;margin-bottom:8px">🔒</div>
+            <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px">Khu vực dành cho Admin</div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px">Nhập mật khẩu admin để truy cập cài đặt Google Sheets</div>
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
+              <input type="password" id="gsAdminPwd" placeholder="Nhập mật khẩu admin..." style="width:220px;text-align:center" onkeydown="if(event.key==='Enter')unlockGS()">
+              <button class="btn btn-navy btn-sm" onclick="unlockGS()">🔓 Mở khóa</button>
+            </div>
+            <div id="gsLockError" style="color:var(--red);font-size:12px;margin-top:8px;display:none">❌ Mật khẩu không đúng. Vui lòng thử lại.</div>
+          </div>
+          <!-- Actual GS content (hidden when locked) -->
+          <div id="gsContent" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <button class="btn btn-white btn-sm" style="border:1px solid var(--gray-200);font-size:11px;color:var(--orange)" onclick="changeGSPassword()">🔑 Đổi mật khẩu</button>
+              <button class="btn btn-white btn-sm" style="border:1px solid var(--gray-200);font-size:11px" onclick="lockGS()">🔒 Khóa lại</button>
+            </div>
+          <div class="info-box">📊 Kết nối Google Sheets để lưu dữ liệu realtime. Mọi thao tác nhập/xuất sẽ tự động đồng bộ lên Google Sheets.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px">
+            <div>
+              <div class="form-group"><label>Google Spreadsheet ID <span class="req">*</span></label><input type="text" id="gsSheetId" placeholder="Dán Spreadsheet ID vào đây..." style="font-family:monospace;font-size:12px"><span class="form-hint">Lấy từ URL: docs.google.com/spreadsheets/d/<strong>[ID này]</strong>/edit</span></div>
+              <div class="form-group mt-8"><label>Google Apps Script Web App URL <span class="req">*</span></label><input type="text" id="gsWebAppUrl" placeholder="https://script.google.com/macros/s/.../exec" style="font-family:monospace;font-size:12px"><span class="form-hint">URL sau khi Deploy Apps Script → Web App</span></div>
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                <button class="btn btn-navy btn-sm" onclick="saveGSConfig()">💾 Lưu cấu hình</button>
+                <button class="btn btn-green btn-sm" onclick="testGSConnection()">🔌 Kiểm tra kết nối</button>
+                <button class="btn btn-white btn-sm" style="border:1px solid var(--gray-200)" onclick="syncAllToGS()">☁️ Đẩy lên Sheets</button>
+                <button class="btn btn-white btn-sm" style="border:1px solid var(--navy);color:var(--navy)" onclick="loadFromGS()">🔄 Tải từ Sheets</button>
+              </div>
+            </div>
+            <div>
+              <div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;color:var(--gray-700)">Trạng thái kết nối</label><div style="margin-top:6px" id="gsStatusDisplay"><span class="gs-status disconnected">⚫ Chưa kết nối</span></div></div>
+              <div style="margin-bottom:10px"><label style="font-size:12px;font-weight:600;color:var(--gray-700)">Lần đồng bộ cuối</label><div style="font-size:12px;color:var(--gray-600);margin-top:4px" id="gsLastSync">—</div></div>
+              <div><label style="font-size:12px;font-weight:600;color:var(--gray-700)">Hướng dẫn thiết lập</label><div style="font-size:11px;color:var(--gray-600);margin-top:6px;line-height:1.7">1. Tạo Google Spreadsheet mới<br>2. Vào <strong>Extensions → Apps Script</strong><br>3. Dán code Apps Script (xem bên dưới)<br>4. Deploy → Web App → Anyone can access<br>5. Copy URL và dán vào ô trên</div><button class="btn btn-white btn-sm mt-8" style="border:1px solid var(--gray-200)" onclick="showGSScript()">📋 Xem code Apps Script</button></div>
+            </div>
+          </div>
+          <div id="gsScriptBox" style="display:none;margin-top:14px">
+            <div class="form-section-title">📋 Google Apps Script Code</div>
+            <div class="warn-box">Copy toàn bộ code này vào Google Apps Script Editor → Deploy → Web App → Execute as: Me → Who has access: Anyone</div>
+            <textarea id="gsScriptCode" rows="14" readonly style="font-family:monospace;font-size:11px;background:var(--gray-50);width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:10px"></textarea>
+            <button class="btn btn-navy btn-sm mt-8" onclick="copyGSScript()">📋 Copy code</button>
+          </div>
+          </div><!-- /gsContent -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-add-category">
+  <div class="modal"><div class="modal-header"><div class="modal-title">📦 Thêm / Chỉnh sửa Danh mục</div><button class="modal-close" onclick="closeModal('modal-add-category')">✕</button></div>
+  <div class="modal-body"><input type="hidden" id="editCatId"><div class="form-grid"><div class="form-group"><label>Tên danh mục <span class="req">*</span></label><input type="text" id="catName" placeholder="VD: Voucher, Áo, Túi..."></div><div class="form-group"><label>Icon (emoji)</label><input type="text" id="catIcon" placeholder="VD: 🎫 🎒 👕" maxlength="4"></div></div></div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-add-category')">Hủy</button><button class="btn btn-navy" onclick="saveCategory()">💾 Lưu danh mục</button></div></div>
+</div>
+<div class="modal-overlay" id="modal-add-item">
+  <div class="modal"><div class="modal-header"><div class="modal-title">🏷️ Thêm / Chỉnh sửa Vật phẩm</div><button class="modal-close" onclick="closeModal('modal-add-item')">✕</button></div>
+  <div class="modal-body"><input type="hidden" id="editItemId"><div class="form-grid"><div class="form-group"><label>Danh mục <span class="req">*</span></label><select id="itemCatId"></select></div><div class="form-group"><label>Tên vật phẩm <span class="req">*</span></label><input type="text" id="itemName" placeholder="VD: Voucher 500k, Balo..."></div><div class="form-group"><label>Đơn vị tính</label><input type="text" id="itemUnit" value="cái" placeholder="cái, chiếc, tờ..."></div><div class="form-group"><label>Giá bán định sẵn (VNĐ)</label><input type="number" id="itemSellPrice" placeholder="0" min="0"></div><div class="form-group"><label>Ngưỡng alert tùy chỉnh</label><input type="number" id="itemAlertQty" placeholder="Để trống = dùng cài đặt chung" min="0"></div><div class="form-group"><label>Ghi chú</label><input type="text" id="itemNote" placeholder="Ghi chú..."></div></div></div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-add-item')">Hủy</button><button class="btn btn-navy" onclick="saveItem()">💾 Lưu vật phẩm</button></div></div>
+</div>
+<div class="modal-overlay" id="modal-import">
+  <div class="modal modal-lg"><div class="modal-header"><div class="modal-title">📥 Nhập hàng mới</div><button class="modal-close" onclick="closeModal('modal-import')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-section"><div class="form-section-title">🏢 Chi nhánh &amp; Vật phẩm</div>
+    <div class="form-grid"><div class="form-group"><label>Chi nhánh <span class="req">*</span></label><select id="impBranch"></select></div><div class="form-group"><label>Ngày nhập <span class="req">*</span></label><input type="date" id="impDate"></div><div class="form-group"><label>Danh mục <span class="req">*</span></label><select id="impCat" onchange="updateImpItems()"><option value="">-- Chọn danh mục --</option></select></div><div class="form-group"><label>Vật phẩm <span class="req">*</span></label><select id="impItem"><option value="">-- Chọn vật phẩm --</option></select></div></div></div>
+    <div class="form-section"><div class="form-section-title">💰 Số lượng &amp; Giá</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Số lượng <span class="req">*</span></label><input type="number" id="impQty" min="1" placeholder="0" oninput="calcImport()"></div>
+      <div class="form-group"><label>Đơn giá (VNĐ) <span class="req">*</span></label><input type="number" id="impUnitPrice" min="0" placeholder="0" oninput="calcImport()"></div>
+      <div class="form-group"><label>Thành tiền (VNĐ)</label><input type="number" id="impSubtotal" readonly></div>
+      <div class="form-group"><label>% VAT</label><div class="num-group"><input type="number" id="impVatPct" value="10" min="0" max="100" oninput="calcImport()"><span class="unit">%</span></div></div>
+      <div class="form-group"><label>Tiền VAT <span class="form-hint">(tự tính, có thể sửa)</span></label><input type="number" id="impVatAmt" min="0" oninput="calcImportTotal()"></div>
+      <div class="form-group"><label>Tổng tiền thanh toán <span class="form-hint">(tự tính, có thể sửa)</span></label><input type="number" id="impTotal" min="0"></div>
+      <div class="form-group"><label>Phí vận chuyển (VNĐ) <span class="form-hint">(chỉ theo dõi)</span></label><input type="number" id="impShipping" min="0" value="0"></div>
+    </div></div>
+    <div class="form-section"><div class="form-section-title">🏭 Nhà cung cấp</div>
+    <div class="form-grid"><div class="form-group"><label>Tên nhà cung cấp</label><input type="text" id="impSupplierName" placeholder="Tên công ty / cá nhân"></div><div class="form-group"><label>Địa chỉ</label><input type="text" id="impSupplierAddr" placeholder="Địa chỉ"></div><div class="form-group"><label>Mã số thuế</label><input type="text" id="impSupplierTax" placeholder="MST"></div><div class="form-group"><label>Số điện thoại</label><input type="text" id="impSupplierPhone" placeholder="SĐT"></div></div></div>
+    <div class="form-group"><label>Ghi chú</label><textarea id="impNote" rows="2" placeholder="Ghi chú..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-import')">Hủy</button><button class="btn btn-navy" onclick="saveImport()">💾 Lưu nhập hàng</button></div></div>
+</div>
+<div class="modal-overlay" id="modal-export">
+  <div class="modal modal-lg"><div class="modal-header"><div class="modal-title">📤 Xuất hàng</div><button class="modal-close" onclick="closeModal('modal-export')">✕</button></div>
+  <div class="modal-body">
+    <div class="form-section"><div class="form-section-title">📋 Loại xuất hàng <span class="req">*</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <label class="exp-type-label" id="etl-gift"><input type="radio" name="expType" value="gift" onchange="onExpTypeChange()"> 🎁 Xuất tặng</label>
+      <label class="exp-type-label" id="etl-sell"><input type="radio" name="expType" value="sell" onchange="onExpTypeChange()"> 💰 Xuất bán</label>
+      <label class="exp-type-label" id="etl-transfer"><input type="radio" name="expType" value="transfer" onchange="onExpTypeChange()"> 🔄 Xuất chuyển CN</label>
+      <label class="exp-type-label" id="etl-dispose"><input type="radio" name="expType" value="dispose" onchange="onExpTypeChange()"> 🗑️ Xuất bỏ</label>
+    </div></div>
+    <div class="form-section"><div class="form-section-title">🏢 Chi nhánh &amp; Vật phẩm</div>
+    <div class="form-grid"><div class="form-group"><label>Chi nhánh xuất <span class="req">*</span></label><select id="expBranch" onchange="onExpBranchChange()"></select></div><div class="form-group"><label>Ngày xuất <span class="req">*</span></label><input type="date" id="expDate"></div><div class="form-group"><label>Danh mục <span class="req">*</span></label><select id="expCat" onchange="updateExpItemsList()"><option value="">-- Chọn danh mục --</option></select></div><div class="form-group"><label>Vật phẩm <span class="req">*</span></label><select id="expItem" onchange="onExpItemChange()"><option value="">-- Chọn vật phẩm --</option></select></div><div class="form-group" id="expTransferToGroup" style="display:none"><label>Chi nhánh nhận <span class="req">*</span></label><select id="expTransferTo"></select></div></div></div>
+    <div class="form-section"><div class="form-section-title">💰 Số lượng &amp; Giá xuất</div>
+    <div class="form-grid"><div class="form-group"><label>Tồn kho hiện tại</label><input type="number" id="expCurrentStock" readonly></div><div class="form-group"><label>Số lượng xuất <span class="req">*</span></label><input type="number" id="expQty" min="1" placeholder="0" oninput="calcExport()"></div><div class="form-group"><label>Đơn giá xuất (VNĐ)</label><input type="number" id="expUnitPrice" placeholder="0" oninput="calcExport()"><span class="form-hint" id="expPriceHint"></span></div><div class="form-group"><label>Thành tiền (VNĐ)</label><input type="number" id="expTotal" readonly></div></div></div>
+    <div class="form-group"><label>Ghi chú</label><textarea id="expNote" rows="2" placeholder="Ghi chú..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-export')">Hủy</button><button class="btn btn-red" onclick="saveExport()">💾 Lưu xuất hàng</button></div></div>
+</div>
+<div class="modal-overlay" id="modal-add-entity">
+  <div class="modal"><div class="modal-header"><div class="modal-title">🏛️ Thêm / Chỉnh sửa Pháp nhân</div><button class="modal-close" onclick="closeModal('modal-add-entity')">✕</button></div>
+  <div class="modal-body"><input type="hidden" id="editEntityId"><div class="form-grid"><div class="form-group"><label>Mã pháp nhân <span class="req">*</span></label><input type="text" id="entityId" placeholder="VD: embassy-hanoi" style="font-family:monospace"></div><div class="form-group"><label>Tên pháp nhân <span class="req">*</span></label><input type="text" id="entityName" placeholder="VD: Công ty CP Embassy Hà Nội"></div><div class="form-group full"><label>Ghi chú</label><input type="text" id="entityNote" placeholder="Ghi chú thêm..."></div></div></div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-add-entity')">Hủy</button><button class="btn btn-navy" onclick="saveEntity()">💾 Lưu pháp nhân</button></div></div>
+</div>
+<div class="modal-overlay" id="modal-add-price-item">
+  <div class="modal"><div class="modal-header"><div class="modal-title">💰 Thêm vật phẩm có giá bán</div><button class="modal-close" onclick="closeModal('modal-add-price-item')">✕</button></div>
+  <div class="modal-body"><div class="form-grid"><div class="form-group"><label>Vật phẩm <span class="req">*</span></label><select id="priceItemId" style="width:100%"></select></div><div class="form-group"><label>Giá bán (VNĐ) <span class="req">*</span></label><input type="number" id="priceItemPrice" placeholder="0" min="0"></div></div></div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-add-price-item')">Hủy</button><button class="btn btn-navy" onclick="addPriceItem()">💾 Thêm</button></div></div>
+</div>
+<div class="modal-overlay" id="modal-add-branch">
+  <div class="modal"><div class="modal-header"><div class="modal-title">🏢 Thêm Chi nhánh</div><button class="modal-close" onclick="closeModal('modal-add-branch')">✕</button></div>
+  <div class="modal-body"><div class="form-grid"><div class="form-group"><label>Mã CN <span class="req">*</span></label><input type="text" id="branchCode" placeholder="VD: NT, MC..." maxlength="5"></div><div class="form-group"><label>Tên CN <span class="req">*</span></label><input type="text" id="branchName" placeholder="VD: Nha Trang..."></div><div class="form-group full"><label>Pháp nhân</label><select id="branchEntity" style="width:100%"></select></div></div></div>
+  <div class="modal-footer"><button class="btn btn-white" onclick="closeModal('modal-add-branch')">Hủy</button><button class="btn btn-navy" onclick="saveBranch()">💾 Lưu chi nhánh</button></div></div><script>
+// =====================================================================
+// CAU HINH KET NOI GOOGLE SHEETS – DAN 1 LAN, DUNG CHUNG CHO MOI MAY
+// ---------------------------------------------------------------------
+// Sau khi Deploy Apps Script -> Web App, copy 2 gia tri duoi day va
+// commit len GitHub. Moi may truy cap link se TU DONG ket noi & tai
+// du lieu tu Google Sheets (khong can nhap lai trong Settings).
+//   - GS_WEB_APP_URL: URL ket thuc bang /exec
+//   - GS_SHEET_ID   : ID trong URL .../spreadsheets/d/<ID>/edit
+// =====================================================================
+var GS_WEB_APP_URL = 'PASTE_WEB_APP_URL_HERE';   // <-- DAN URL .../exec vao day
+var GS_SHEET_ID    = 'PASTE_SHEET_ID_HERE';      // <-- DAN Spreadsheet ID vao day
+var GS_POLL_MS     = 45000;                        // Tu dong tai lai moi 45 giay
+function gsConfigured(v){ return v && v.indexOf('PASTE_')!==0; }
+
+var DB={categories:[],items:[],imports:[],exports:[],branches:[],entities:[],priceHistory:{},settings:{alertPct:10,alertQty:20,emailRecipient:'info@embassy.edu.vn',emailSubject:'Cap nhat file ton kho vat pham vao cuoi thang {MM/YYYY}',gsSheetId:'',gsWebAppUrl:'',gsLastSync:'',gsAdminHash:''}};
+
+function initData(){
+  DB.entities=[{id:'embassy-english',name:'Cong ty CP Embassy English'},{id:'embassy-cam-ranh',name:'Cong ty CP Embassy Cam Ranh'},{id:'embassy-tuy-hoa',name:'Cong ty CP Embassy Tuy Hoa'},{id:'embassy-gia-lai',name:'Cong ty CP Embassy Gia Lai'}];
+  DB.branches=[
+    {id:'NT',code:'NT',name:'Nha Trang',entity:'embassy-english',entityName:'Cong ty CP Embassy English'},
+    {id:'MC',code:'MC',name:'My Ca',entity:'embassy-english',entityName:'Cong ty CP Embassy English'},
+    {id:'CL',code:'CL',name:'Cam Lam',entity:'embassy-english',entityName:'Cong ty CP Embassy English'},
+    {id:'QN',code:'QN',name:'Quy Nhon',entity:'embassy-english',entityName:'Cong ty CP Embassy English'},
+    {id:'BN',code:'BN',name:'Ba Ngoi',entity:'embassy-cam-ranh',entityName:'Cong ty CP Embassy Cam Ranh'},
+    {id:'TH',code:'TH',name:'Tuy Hoa',entity:'embassy-tuy-hoa',entityName:'Cong ty CP Embassy Tuy Hoa'},
+    {id:'GL',code:'GL',name:'Gia Lai',entity:'embassy-gia-lai',entityName:'Cong ty CP Embassy Gia Lai'}
+  ];
+  DB.categories=[
+    {id:'cat-voucher',name:'Voucher',icon:'🎫'},
+    {id:'cat-bag',name:'Tui & Balo',icon:'🎒'},
+    {id:'cat-shirt',name:'Ao',icon:'👕'},
+    {id:'cat-hat',name:'Mu & Non',icon:'🧢'},
+    {id:'cat-toy',name:'Gau bong & Do choi',icon:'🧸'},
+    {id:'cat-bottle',name:'Binh nuoc',icon:'🍶'},
+    {id:'cat-acc',name:'Phu kien',icon:'🔑'},
+    {id:'cat-other',name:'Khac',icon:'📦'}
+  ];
+  DB.items=[
+    {id:'i-v500',catId:'cat-voucher',name:'Voucher 500k',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v1tr',catId:'cat-voucher',name:'Voucher 1 trieu',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v50',catId:'cat-voucher',name:'Voucher 50%',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v40',catId:'cat-voucher',name:'Voucher 40%',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v30',catId:'cat-voucher',name:'Voucher 30%',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v20',catId:'cat-voucher',name:'Voucher 20%',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v10',catId:'cat-voucher',name:'Voucher 10%',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-v100',catId:'cat-voucher',name:'Voucher 100%',unit:'to',sellPrice:0,alertQty:null,note:''},
+    {id:'i-bithu',catId:'cat-voucher',name:'Bi thu',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-balo',catId:'cat-bag',name:'Balo',unit:'cai',sellPrice:150000,alertQty:null,note:''},
+    {id:'i-tuivai',catId:'cat-bag',name:'Tui vai',unit:'cai',sellPrice:50000,alertQty:null,note:''},
+    {id:'i-tuigiay',catId:'cat-bag',name:'Tui giay',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-aothunhs',catId:'cat-shirt',name:'Ao thun hoc sinh',unit:'cai',sellPrice:100000,alertQty:null,note:''},
+    {id:'i-aothunnv',catId:'cat-shirt',name:'Ao thun dong phuc NV',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-aokhoac',catId:'cat-shirt',name:'Ao khoac',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-mubaohiem',catId:'cat-hat',name:'Mu bao hiem',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-muvai',catId:'cat-hat',name:'Mu vai',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-gaubong',catId:'cat-toy',name:'Gau bong',unit:'con',sellPrice:0,alertQty:null,note:''},
+    {id:'i-binhnuoc',catId:'cat-bottle',name:'Binh nuoc',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-binhgn',catId:'cat-bottle',name:'Binh giu nhiet',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-quangiay',catId:'cat-acc',name:'Quat giay',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-donghocai',catId:'cat-acc',name:'Dong ho',unit:'cai',sellPrice:0,alertQty:null,note:''},
+    {id:'i-mockhoa',catId:'cat-acc',name:'Moc khoa',unit:'cai',sellPrice:0,alertQty:null,note:''}
+  ];
+  saveToStorage();
+}
+
+function saveToStorage(){try{localStorage.setItem('embassy_inv_v3',JSON.stringify(DB));}catch(e){}}
+function loadFromStorage(){try{var d=localStorage.getItem('embassy_inv_v3');if(d){DB=JSON.parse(d);return true;}}catch(e){}return false;}
+// Ap cau hinh ket noi hardcode (neu da dien) -> moi may deu tu dong ket noi GS
+function applyHardcodedGSConfig(){
+  if(gsConfigured(GS_WEB_APP_URL)) DB.settings.gsWebAppUrl=GS_WEB_APP_URL;
+  if(gsConfigured(GS_SHEET_ID))    DB.settings.gsSheetId=GS_SHEET_ID;
+  saveToStorage();
+}
+
+function fmt(n){if(n===null||n===undefined||isNaN(n))return '\u2014';return Number(n).toLocaleString('vi-VN')+' \u20ab';}
+function fmtN(n){if(n===null||n===undefined||isNaN(n))return '\u2014';return Number(n).toLocaleString('vi-VN');}
+function fmtDate(d){if(!d)return '\u2014';return new Date(d+'T00:00:00').toLocaleDateString('vi-VN');}
+function genId(p){return p+'-'+Date.now()+'-'+Math.random().toString(36).substr(2,5);}
+function today(){return new Date().toISOString().split('T')[0];}
+function nowMonthYear(){var d=new Date();return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function getFIFOStock(itemId,branchId){
+  var imps=DB.imports.filter(function(i){return i.itemId===itemId&&i.branchId===branchId;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var exps=DB.exports.filter(function(e){return e.itemId===itemId&&e.branchId===branchId;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var tIn=DB.exports.filter(function(e){return e.itemId===itemId&&e.type==='transfer'&&e.transferTo===branchId;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var batches=[];
+  imps.forEach(function(i){batches.push({qty:i.qty,unitPrice:i.unitPriceWithVat||i.unitPrice,date:i.date});});
+  tIn.forEach(function(t){batches.push({qty:t.qty,unitPrice:t.unitPrice||0,date:t.date});});
+  batches.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var rem=batches.map(function(b){return{qty:b.qty,unitPrice:b.unitPrice};});
+  exps.forEach(function(exp){var td=exp.qty;for(var i=0;i<rem.length&&td>0;i++){if(rem[i].qty<=td){td-=rem[i].qty;rem[i].qty=0;}else{rem[i].qty-=td;td=0;}}});
+  var tq=0,tv=0;rem.forEach(function(b){tq+=b.qty;tv+=b.qty*b.unitPrice;});
+  return{qty:tq,value:tv,avgPrice:tq>0?tv/tq:0};
+}
+function getTotalImported(itemId,branchId){return DB.imports.filter(function(i){return i.itemId===itemId&&i.branchId===branchId;}).reduce(function(s,i){return s+i.qty;},0);}
+function getTotalExported(itemId,branchId){return DB.exports.filter(function(e){return e.itemId===itemId&&e.branchId===branchId;}).reduce(function(s,e){return s+e.qty;},0);}
+function getFirstOrderQty(itemId,branchId){var s=DB.imports.filter(function(i){return i.itemId===itemId&&i.branchId===branchId;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});return s.length>0?s[0].qty:0;}
+function getAlertThreshold(item,branchId){var fo=getFirstOrderQty(item.id,branchId);var pt=Math.ceil(fo*DB.settings.alertPct/100);var qt=item.alertQty!==null?item.alertQty:DB.settings.alertQty;return Math.max(pt,qt);}
+function isAlert(item,branchId){var hi=DB.imports.some(function(i){return i.itemId===item.id&&i.branchId===branchId;});if(!hi)return false;return getFIFOStock(item.id,branchId).qty<=getAlertThreshold(item,branchId);}
+
+var currentPage='dashboard';
+function showPage(page){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var el=document.getElementById('page-'+page);if(el)el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n){if(n.getAttribute('onclick')&&n.getAttribute('onclick').indexOf("'"+page+"'")>=0)n.classList.add('active');});
+  currentPage=page;renderPage(page);
+}
+function renderPage(page){
+  if(page==='dashboard')renderDashboard();
+  else if(page==='categories')renderCategories();
+  else if(page==='inventory')renderInventory();
+  else if(page==='imports')renderImports();
+  else if(page==='exports')renderExports();
+  else if(page==='report-branch')renderReportBranch();
+  else if(page==='report-summary')renderReportSummary();
+  else if(page==='settings')renderSettings();
+}
+
+function openModal(id){
+  document.getElementById(id).classList.add('show');
+  if(id==='modal-import')initImportModal();
+  if(id==='modal-export')initExportModal();
+  if(id==='modal-add-branch')initBranchEntitySelect();
+}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.addEventListener('click',function(e){if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('show');});
+
+function showToast(msg,type,duration){
+  type=type||'info';duration=duration||3000;
+  var tc=document.getElementById('toastContainer');
+  var t=document.createElement('div');t.className='toast '+type;
+  var icons={success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  t.innerHTML='<span>'+(icons[type]||'ℹ️')+'</span> '+msg;
+  tc.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(100%)';t.style.transition='all .3s';setTimeout(function(){t.remove();},300);},duration);
+}
+
+function checkAlerts(){
+  var ai=[];
+  DB.items.forEach(function(item){DB.branches.forEach(function(branch){if(isAlert(item,branch.id))ai.push({item:item,branch:branch,stock:getFIFOStock(item.id,branch.id).qty});});});
+  var bar=document.getElementById('alertBar'),itemsEl=document.getElementById('alertItems'),badge=document.getElementById('alertBadge');
+  if(ai.length>0){bar.classList.add('show');badge.style.display='inline';badge.textContent=ai.length;itemsEl.innerHTML=ai.map(function(a){return '<span class="alert-chip">'+esc(a.item.name)+' ['+a.branch.code+']: con '+a.stock+'</span>';}).join('');}
+  else{bar.classList.remove('show');badge.style.display='none';}
+  return ai;
+}
+
+function renderDashboard(){
+  var tiv=DB.imports.reduce(function(s,i){return s+(i.total||0);},0);
+  var ai=checkAlerts();
+  document.getElementById('statsGrid').innerHTML=
+    sc('navy','📦',DB.items.length,'Loai vat pham')+sc('green','📥',DB.imports.length,'Lan nhap hang')+
+    sc('orange','📤',DB.exports.length,'Lan xuat hang')+sc('red','🔴',ai.length,'Canh bao ton thap')+
+    '<div class="stat-card"><div class="stat-icon navy">💰</div><div><div class="stat-value" style="font-size:15px">'+fmt(tiv)+'</div><div class="stat-label">Tong gia tri nhap</div></div></div>'+
+    sc('navy','🏢',DB.branches.length,'Chi nhanh');
+  var da=document.getElementById('dashAlertList');
+  if(ai.length===0){da.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>Khong co canh bao</p></div>';}
+  else{da.innerHTML=ai.map(function(a){var th=getAlertThreshold(a.item,a.branch.id);var pct=th>0?Math.round(a.stock/th*100):0;return '<div style="padding:7px 0;border-bottom:1px solid var(--gray-100)"><div style="display:flex;justify-content:space-between;align-items:center"><div><span class="fw-bold text-navy">'+esc(a.item.name)+'</span> <span class="badge badge-navy">'+a.branch.code+'</span></div><span class="badge badge-red">Con '+a.stock+'</span></div><div class="progress-bar mt-8"><div class="progress-fill red" style="width:'+Math.min(pct,100)+'%"></div></div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">Nguong: '+th+' | Ton: '+a.stock+'</div></div>';}).join('');}
+  var allTx=DB.imports.map(function(i){return Object.assign({},i,{txType:'import'});}).concat(DB.exports.map(function(e){return Object.assign({},e,{txType:'export'});})).sort(function(a,b){return new Date(b.date)-new Date(a.date);}).slice(0,8);
+  var re=document.getElementById('recentTx');
+  if(allTx.length===0){re.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co giao dich</p></div>';}
+  else{re.innerHTML=allTx.map(function(tx){var item=DB.items.find(function(i){return i.id===tx.itemId;});var branch=DB.branches.find(function(b){return b.id===tx.branchId;});var isImp=tx.txType==='import';return '<div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--gray-100)"><span style="font-size:17px">'+(isImp?'📥':'📤')+'</span><div style="flex:1"><div class="fw-bold" style="font-size:13px">'+(item?esc(item.name):'?')+' <span class="badge badge-navy">'+(branch?branch.code:'?')+'</span></div><div style="font-size:11px;color:var(--gray-400)">'+fmtDate(tx.date)+' \u00b7 '+(isImp?'+':'-')+tx.qty+'</div></div><span class="'+(isImp?'text-green':'text-red')+' fw-bold" style="font-size:13px">'+(isImp?'+':'-')+fmtN(tx.qty)+'</span></div>';}).join('');}
+}
+function sc(color,icon,val,label){return '<div class="stat-card"><div class="stat-icon '+color+'">'+icon+'</div><div><div class="stat-value">'+val+'</div><div class="stat-label">'+label+'</div></div></div>';}
+
+var selectedCatId=null;
+function renderCategories(){
+  document.getElementById('catGrid').innerHTML=DB.categories.map(function(cat){
+    var items=DB.items.filter(function(i){return i.catId===cat.id;});
+    var ha=items.some(function(item){return DB.branches.some(function(b){return isAlert(item,b.id);});});
+    return '<div class="cat-card'+(selectedCatId===cat.id?' selected':'')+'" onclick="selectCategory(\''+cat.id+'\')">'+
+      '<button class="cat-edit-btn" onclick="event.stopPropagation();editCategory(\''+cat.id+'\')">✏️</button>'+
+      (ha?'<span class="cat-alert">!</span>':'')+
+      '<div class="cat-icon">'+cat.icon+'</div><div class="cat-name">'+esc(cat.name)+'</div><div class="cat-count">'+items.length+' vat pham</div></div>';
+  }).join('');
+}
+function selectCategory(catId){selectedCatId=catId;renderCategories();renderCatItems(catId);}
+function closeCatItems(){selectedCatId=null;document.getElementById('catItemsCard').style.display='none';renderCategories();}
+function renderCatItems(catId){
+  var cat=DB.categories.find(function(c){return c.id===catId;});
+  var items=DB.items.filter(function(i){return i.catId===catId;});
+  document.getElementById('catItemsCard').style.display='block';
+  document.getElementById('catItemsTitle').innerHTML=cat.icon+' '+esc(cat.name)+' \u2013 Danh sach vat pham';
+  var tbody=document.getElementById('catItemsBody');
+  if(items.length===0){tbody.innerHTML='<tr><td colspan="7" class="text-center text-gray" style="padding:20px">Chua co vat pham.</td></tr>';return;}
+  tbody.innerHTML=items.map(function(item){
+    var ts=DB.branches.reduce(function(s,b){return s+getFIFOStock(item.id,b.id).qty;},0);
+    var ha=DB.branches.some(function(b){return isAlert(item,b.id);});
+    var th=item.alertQty!==null?item.alertQty:DB.settings.alertQty;
+    return '<tr'+(ha?' class="alert-row"':'')+'>'+
+      '<td class="fw-bold">'+esc(item.name)+'</td><td>'+esc(item.unit)+'</td>'+
+      '<td>'+(item.sellPrice>0?fmt(item.sellPrice):'<span class="text-gray">\u2014</span>')+'</td>'+
+      '<td>'+th+' '+(item.alertQty!==null?'<span class="badge badge-orange">Tuy chinh</span>':'<span class="badge badge-gray">Mac dinh</span>')+'</td>'+
+      '<td class="fw-bold'+(ts===0?' text-red':'')+'">'+fmtN(ts)+' '+esc(item.unit)+'</td>'+
+      '<td>'+(ha?'<span class="badge badge-red">⚠️ Canh bao</span>':'<span class="badge badge-green">✅ Binh thuong</span>')+'</td>'+
+      '<td><button class="btn btn-white btn-sm" onclick="editItem(\''+item.id+'\')">✏️ Sua</button> <button class="btn btn-danger btn-sm" onclick="deleteItem(\''+item.id+'\')">🗑️</button></td></tr>';
+  }).join('');
+}
+function openAddCatModal(){document.getElementById('editCatId').value='';document.getElementById('catName').value='';document.getElementById('catIcon').value='';openModal('modal-add-category');}
+function openAddItemModal(){
+  document.getElementById('editItemId').value='';document.getElementById('itemName').value='';document.getElementById('itemUnit').value='cai';
+  document.getElementById('itemSellPrice').value='';document.getElementById('itemAlertQty').value='';document.getElementById('itemNote').value='';
+  document.getElementById('itemCatId').innerHTML=DB.categories.map(function(c){return '<option value="'+c.id+'"'+(c.id===selectedCatId?' selected':'')+'>'+c.icon+' '+esc(c.name)+'</option>';}).join('');
+  openModal('modal-add-item');
+}
+function editItem(itemId){
+  var item=DB.items.find(function(i){return i.id===itemId;});if(!item)return;
+  document.getElementById('editItemId').value=item.id;document.getElementById('itemName').value=item.name;document.getElementById('itemUnit').value=item.unit;
+  document.getElementById('itemSellPrice').value=item.sellPrice||'';document.getElementById('itemAlertQty').value=item.alertQty!==null?item.alertQty:'';document.getElementById('itemNote').value=item.note||'';
+  document.getElementById('itemCatId').innerHTML=DB.categories.map(function(c){return '<option value="'+c.id+'"'+(c.id===item.catId?' selected':'')+'>'+c.icon+' '+esc(c.name)+'</option>';}).join('');
+  openModal('modal-add-item');
+}
+function saveItem(){
+  var id=document.getElementById('editItemId').value,name=document.getElementById('itemName').value.trim(),catId=document.getElementById('itemCatId').value;
+  if(!name||!catId){showToast('Vui long nhap ten va chon danh muc','error');return;}
+  var data={catId:catId,name:name,unit:document.getElementById('itemUnit').value||'cai',sellPrice:parseFloat(document.getElementById('itemSellPrice').value)||0,alertQty:document.getElementById('itemAlertQty').value!==''?parseInt(document.getElementById('itemAlertQty').value):null,note:document.getElementById('itemNote').value};
+  if(id){var idx=DB.items.findIndex(function(i){return i.id===id;});if(idx>=0)DB.items[idx]=Object.assign({},DB.items[idx],data);showToast('Da cap nhat vat pham','success');}
+  else{DB.items.push(Object.assign({id:genId('item')},data));showToast('Da them vat pham moi','success');}
+  saveToStorage();closeModal('modal-add-item');if(selectedCatId)renderCatItems(selectedCatId);renderCategories();checkAlerts();
+}
+function deleteItem(itemId){
+  if(DB.imports.some(function(i){return i.itemId===itemId;})||DB.exports.some(function(e){return e.itemId===itemId;})){showToast('Khong the xoa vat pham da co giao dich','error');return;}
+  if(!confirm('Xac nhan xoa vat pham nay?'))return;
+  DB.items=DB.items.filter(function(i){return i.id!==itemId;});saveToStorage();showToast('Da xoa vat pham','success');if(selectedCatId)renderCatItems(selectedCatId);renderCategories();
+}
+function editCategory(catId){
+  var cat=DB.categories.find(function(c){return c.id===catId;});if(!cat)return;
+  document.getElementById('editCatId').value=cat.id;document.getElementById('catName').value=cat.name;document.getElementById('catIcon').value=cat.icon;openModal('modal-add-category');
+}
+function saveCategory(){
+  var id=document.getElementById('editCatId').value,name=document.getElementById('catName').value.trim(),icon=document.getElementById('catIcon').value.trim()||'📦';
+  if(!name){showToast('Vui long nhap ten danh muc','error');return;}
+  if(id){var idx=DB.categories.findIndex(function(c){return c.id===id;});if(idx>=0)DB.categories[idx]=Object.assign({},DB.categories[idx],{name:name,icon:icon});showToast('Da cap nhat danh muc','success');}
+  else{DB.categories.push({id:genId('cat'),name:name,icon:icon});showToast('Da them danh muc moi','success');}
+  document.getElementById('editCatId').value='';saveToStorage();closeModal('modal-add-category');renderCategories();
+}
+
+var invBranch='ALL';
+function setInvBranch(id){invBranch=id;renderInventory();}
+function renderInventory(){
+  var te=document.getElementById('invBranchTabs');
+  te.innerHTML='<div class="branch-tab'+(invBranch==='ALL'?' active':'')+'" onclick="setInvBranch(\'ALL\')">🌐 Tat ca</div>'+
+    DB.branches.map(function(b){return '<div class="branch-tab'+(invBranch===b.id?' active':'')+'" onclick="setInvBranch(\''+b.id+'\')">'+b.code+' \u2013 '+esc(b.name)+'</div>';}).join('');
+  var cs=document.getElementById('invCatFilter'),cc=cs.value;
+  cs.innerHTML='<option value="">Tat ca danh muc</option>'+DB.categories.map(function(c){return '<option value="'+c.id+'"'+(c.id===cc?' selected':'')+'>'+c.icon+' '+esc(c.name)+'</option>';}).join('');
+  var search=document.getElementById('invSearch').value.toLowerCase(),catFilter=cs.value,statusFilter=document.getElementById('invStatusFilter').value;
+  var branches=invBranch==='ALL'?DB.branches:DB.branches.filter(function(b){return b.id===invBranch;});
+  var rows=[];
+  DB.items.forEach(function(item){
+    var cat=DB.categories.find(function(c){return c.id===item.catId;});
+    if(catFilter&&item.catId!==catFilter)return;
+    if(search&&item.name.toLowerCase().indexOf(search)<0)return;
+    branches.forEach(function(branch){
+      var ti=getTotalImported(item.id,branch.id),te2=getTotalExported(item.id,branch.id);
+      if(invBranch==='ALL'&&ti===0&&te2===0)return;
+      var stock=getFIFOStock(item.id,branch.id),alert=isAlert(item,branch.id),threshold=getAlertThreshold(item,branch.id);
+      if(statusFilter==='ok'&&(alert||stock.qty===0))return;
+      if(statusFilter==='alert'&&!alert)return;
+      if(statusFilter==='zero'&&stock.qty!==0)return;
+      rows.push({item:item,cat:cat,branch:branch,stock:stock,totalImp:ti,totalExp:te2,alert:alert,threshold:threshold});
+    });
+  });
+  var tbody=document.getElementById('invBody');
+  if(rows.length===0){tbody.innerHTML='<tr><td colspan="11" class="text-center text-gray" style="padding:24px">Khong co du lieu</td></tr>';return;}
+  tbody.innerHTML=rows.map(function(r,idx){
+    return '<tr'+(r.alert?' class="alert-row"':'')+'>'+
+      '<td class="text-gray">'+(idx+1)+'</td>'+
+      '<td>'+(r.cat?r.cat.icon+' '+esc(r.cat.name):'\u2014')+'</td>'+
+      '<td class="fw-bold">'+esc(r.item.name)+'</td>'+
+      '<td><span class="badge badge-navy">'+r.branch.code+'</span></td>'+
+      '<td class="text-green fw-bold">'+fmtN(r.totalImp)+'</td>'+
+      '<td class="text-red">'+fmtN(r.totalExp)+'</td>'+
+      '<td class="fw-bold'+(r.stock.qty===0?' text-red':r.alert?' text-red':'')+'">'+fmtN(r.stock.qty)+' '+esc(r.item.unit)+'</td>'+
+      '<td>'+(r.stock.avgPrice>0?fmt(r.stock.avgPrice):'\u2014')+' <span class="fifo-tag">FIFO</span></td>'+
+      '<td class="fw-bold">'+(r.stock.value>0?fmt(r.stock.value):'\u2014')+'</td>'+
+      '<td>'+fmtN(r.threshold)+'</td>'+
+      '<td>'+(r.stock.qty===0?'<span class="badge badge-red">Het hang</span>':r.alert?'<span class="badge badge-red">⚠️ Canh bao</span>':'<span class="badge badge-green">✅ Binh thuong</span>')+'</td></tr>';
+  }).join('');
+}
+
+function initImportModal(){
+  document.getElementById('impBranch').innerHTML=DB.branches.map(function(b){return '<option value="'+b.id+'">'+b.code+' \u2013 '+esc(b.name)+'</option>';}).join('');
+  document.getElementById('impCat').innerHTML='<option value="">-- Chon danh muc --</option>'+DB.categories.map(function(c){return '<option value="'+c.id+'">'+c.icon+' '+esc(c.name)+'</option>';}).join('');
+  document.getElementById('impDate').value=today();
+  ['impQty','impUnitPrice','impSubtotal','impVatAmt','impTotal'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('impVatPct').value='10';document.getElementById('impShipping').value='0';
+  ['impSupplierName','impSupplierAddr','impSupplierTax','impSupplierPhone','impNote'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('impItem').innerHTML='<option value="">-- Chon vat pham --</option>';
+}
+function updateImpItems(){
+  var catId=document.getElementById('impCat').value;
+  document.getElementById('impItem').innerHTML='<option value="">-- Chon vat pham --</option>'+DB.items.filter(function(i){return i.catId===catId;}).map(function(i){return '<option value="'+i.id+'">'+esc(i.name)+'</option>';}).join('');
+}
+function calcImport(){
+  var qty=parseFloat(document.getElementById('impQty').value)||0,price=parseFloat(document.getElementById('impUnitPrice').value)||0,sub=qty*price;
+  document.getElementById('impSubtotal').value=sub;
+  var vp=parseFloat(document.getElementById('impVatPct').value)||0,va=Math.round(sub*vp/100);
+  document.getElementById('impVatAmt').value=va;document.getElementById('impTotal').value=sub+va;
+}
+function calcImportTotal(){var sub=parseFloat(document.getElementById('impSubtotal').value)||0,va=parseFloat(document.getElementById('impVatAmt').value)||0;document.getElementById('impTotal').value=sub+va;}
+function saveImport(){
+  var branchId=document.getElementById('impBranch').value,itemId=document.getElementById('impItem').value,qty=parseInt(document.getElementById('impQty').value),date=document.getElementById('impDate').value;
+  if(!branchId||!itemId||!qty||qty<=0||!date){showToast('Vui long dien day du thong tin bat buoc','error');return;}
+  var sub=parseFloat(document.getElementById('impSubtotal').value)||0,vp=parseFloat(document.getElementById('impVatPct').value)||0,va=parseFloat(document.getElementById('impVatAmt').value)||0,total=parseFloat(document.getElementById('impTotal').value)||0,up=parseFloat(document.getElementById('impUnitPrice').value)||0;
+  var newImp={id:genId('imp'),date:date,branchId:branchId,itemId:itemId,qty:qty,unitPrice:up,subtotal:sub,vatPct:vp,vatAmt:va,total:total,unitPriceWithVat:qty>0?total/qty:up,shipping:parseFloat(document.getElementById('impShipping').value)||0,supplierName:document.getElementById('impSupplierName').value,supplierAddr:document.getElementById('impSupplierAddr').value,supplierTax:document.getElementById('impSupplierTax').value,supplierPhone:document.getElementById('impSupplierPhone').value,note:document.getElementById('impNote').value,createdAt:new Date().toISOString()};
+  DB.imports.push(newImp);saveToStorage();closeModal('modal-import');showToast('Da luu nhap hang thanh cong!','success');
+  var item=DB.items.find(function(i){return i.id===itemId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null;
+  syncTransactionToGS('import',Object.assign({},newImp,{catName:cat?cat.name:'',itemName:item?item.name:''}));
+  checkAlerts();renderPage(currentPage);
+}
+
+function initExportModal(){
+  document.getElementById('expBranch').innerHTML=DB.branches.map(function(b){return '<option value="'+b.id+'">'+b.code+' \u2013 '+esc(b.name)+'</option>';}).join('');
+  document.getElementById('expTransferTo').innerHTML=DB.branches.map(function(b){return '<option value="'+b.id+'">'+b.code+' \u2013 '+esc(b.name)+'</option>';}).join('');
+  document.getElementById('expCat').innerHTML='<option value="">-- Chon danh muc --</option>'+DB.categories.map(function(c){return '<option value="'+c.id+'">'+c.icon+' '+esc(c.name)+'</option>';}).join('');
+  document.getElementById('expDate').value=today();
+  ['expQty','expUnitPrice','expTotal','expCurrentStock'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('expNote').value='';document.getElementById('expTransferToGroup').style.display='none';
+  document.getElementById('expItem').innerHTML='<option value="">-- Chon vat pham --</option>';
+  document.querySelectorAll('input[name="expType"]').forEach(function(r){r.checked=false;});
+  document.querySelectorAll('.exp-type-label').forEach(function(l){l.style.borderColor='var(--gray-200)';l.style.background='white';});
+}
+function onExpTypeChange(){
+  var te=document.querySelector('input[name="expType"]:checked');if(!te)return;var type=te.value;
+  document.querySelectorAll('.exp-type-label').forEach(function(l){l.style.borderColor='var(--gray-200)';l.style.background='white';});
+  var colors={gift:'var(--green)',sell:'var(--navy)',transfer:'var(--orange)',dispose:'var(--red)'},bgs={gift:'#dcfce7',sell:'#eef1f9',transfer:'#fff7ed',dispose:'#fff0f0'};
+  var el=document.getElementById('etl-'+type);if(el){el.style.borderColor=colors[type];el.style.background=bgs[type];}
+  document.getElementById('expTransferToGroup').style.display=type==='transfer'?'block':'none';onExpItemChange();
+}
+function onExpBranchChange(){updateExpItemsList();}
+function updateExpItemsList(){
+  var catId=document.getElementById('expCat').value,branchId=document.getElementById('expBranch').value;
+  document.getElementById('expItem').innerHTML='<option value="">-- Chon vat pham --</option>'+DB.items.filter(function(i){return i.catId===catId;}).map(function(i){var s=getFIFOStock(i.id,branchId);return '<option value="'+i.id+'">'+esc(i.name)+' (Ton: '+s.qty+')</option>';}).join('');
+  ['expCurrentStock','expUnitPrice','expTotal'].forEach(function(id){document.getElementById(id).value='';});
+}
+function onExpItemChange(){
+  var itemId=document.getElementById('expItem').value,branchId=document.getElementById('expBranch').value,te=document.querySelector('input[name="expType"]:checked'),type=te?te.value:null;
+  if(!itemId||!branchId)return;
+  var item=DB.items.find(function(i){return i.id===itemId;}),stock=getFIFOStock(itemId,branchId);
+  document.getElementById('expCurrentStock').value=stock.qty;
+  var hint=document.getElementById('expPriceHint'),pi=document.getElementById('expUnitPrice');
+  if(type==='sell'){var sp=(item&&item.sellPrice)?item.sellPrice:0;pi.value=sp;pi.removeAttribute('readonly');hint.textContent=sp>0?'Gia dinh san: '+fmt(sp)+' (co the sua)':'Nhap gia ban';}
+  else{pi.value=Math.round(stock.avgPrice);pi.setAttribute('readonly',true);hint.textContent='Gia goc nhap FIFO: '+fmt(stock.avgPrice);}
+  calcExport();
+}
+function calcExport(){var qty=parseFloat(document.getElementById('expQty').value)||0,price=parseFloat(document.getElementById('expUnitPrice').value)||0;document.getElementById('expTotal').value=qty*price;}
+function saveExport(){
+  var te=document.querySelector('input[name="expType"]:checked'),type=te?te.value:null;
+  var branchId=document.getElementById('expBranch').value,itemId=document.getElementById('expItem').value,qty=parseInt(document.getElementById('expQty').value),date=document.getElementById('expDate').value;
+  if(!type){showToast('Vui long chon loai xuat hang','error');return;}
+  if(!branchId||!itemId||!qty||qty<=0||!date){showToast('Vui long dien day du thong tin bat buoc','error');return;}
+  var stock=getFIFOStock(itemId,branchId);
+  if(qty>stock.qty){showToast('Khong du hang! Ton kho hien tai: '+stock.qty,'error');return;}
+  var transferTo=type==='transfer'?document.getElementById('expTransferTo').value:null;
+  if(type==='transfer'&&transferTo===branchId){showToast('Chi nhanh nhan khong the trung chi nhanh xuat','error');return;}
+  var up=parseFloat(document.getElementById('expUnitPrice').value)||0,total=qty*up;
+  var newExp={id:genId('exp'),date:date,branchId:branchId,itemId:itemId,type:type,qty:qty,unitPrice:up,total:total,transferTo:transferTo,note:document.getElementById('expNote').value,createdAt:new Date().toISOString()};
+  DB.exports.push(newExp);saveToStorage();closeModal('modal-export');showToast('Da luu xuat hang thanh cong!','success');
+  var item=DB.items.find(function(i){return i.id===itemId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null;
+  var trB=transferTo?DB.branches.find(function(b){return b.id===transferTo;}):null;
+  var tl={gift:'Xuat tang',sell:'Xuat ban',transfer:'Xuat chuyen CN',dispose:'Xuat bo'};
+  syncTransactionToGS('export',Object.assign({},newExp,{catName:cat?cat.name:'',itemName:item?item.name:'',type:tl[type]||type,transferTo:trB?trB.code:''}));
+  checkAlerts();renderPage(currentPage);
+}
+
+function renderImports(){
+  var bs=document.getElementById('impBranchFilter'),bc=bs.value;
+  bs.innerHTML='<option value="">Tat ca CN</option>'+DB.branches.map(function(b){return '<option value="'+b.id+'"'+(b.id===bc?' selected':'')+'>'+b.code+' \u2013 '+esc(b.name)+'</option>';}).join('');
+  var cs=document.getElementById('impCatFilter'),cc=cs.value;
+  cs.innerHTML='<option value="">Tat ca danh muc</option>'+DB.categories.map(function(c){return '<option value="'+c.id+'"'+(c.id===cc?' selected':'')+'>'+c.icon+' '+esc(c.name)+'</option>';}).join('');
+  var search=document.getElementById('impSearch').value.toLowerCase(),bf=bs.value,cf=cs.value,df=document.getElementById('impDateFrom').value,dt=document.getElementById('impDateTo').value;
+  var data=DB.imports.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  if(bf)data=data.filter(function(i){return i.branchId===bf;});
+  if(cf){var iids=DB.items.filter(function(i){return i.catId===cf;}).map(function(i){return i.id;});data=data.filter(function(i){return iids.indexOf(i.itemId)>=0;});}
+  if(df)data=data.filter(function(i){return i.date>=df;});if(dt)data=data.filter(function(i){return i.date<=dt;});
+  if(search)data=data.filter(function(i){var item=DB.items.find(function(it){return it.id===i.itemId;});return(item&&item.name.toLowerCase().indexOf(search)>=0)||(i.supplierName&&i.supplierName.toLowerCase().indexOf(search)>=0);});
+  var tbody=document.getElementById('impBody');
+  if(data.length===0){tbody.innerHTML='<tr><td colspan="15" class="text-center text-gray" style="padding:24px">Khong co du lieu</td></tr>';return;}
+  tbody.innerHTML=data.map(function(imp,idx){
+    var item=DB.items.find(function(i){return i.id===imp.itemId;}),branch=DB.branches.find(function(b){return b.id===imp.branchId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null;
+    return '<tr><td class="text-gray">'+(idx+1)+'</td><td>'+fmtDate(imp.date)+'</td><td><span class="badge badge-navy">'+(branch?branch.code:'?')+'</span></td><td>'+(cat?cat.icon+' '+esc(cat.name):'\u2014')+'</td><td class="fw-bold">'+(item?esc(item.name):'?')+'</td><td class="fw-bold text-green">'+fmtN(imp.qty)+'</td><td>'+fmt(imp.unitPrice)+'</td><td>'+fmt(imp.subtotal)+'</td><td>'+imp.vatPct+'%</td><td>'+fmt(imp.vatAmt)+'</td><td class="fw-bold">'+fmt(imp.total)+'</td><td>'+(imp.shipping>0?fmt(imp.shipping):'\u2014')+'</td><td style="font-size:12px">'+(imp.supplierName||'\u2014')+'</td><td style="font-size:12px">'+(imp.note||'\u2014')+'</td><td><button class="btn btn-danger btn-sm" onclick="deleteImport(\''+imp.id+'\')">🗑️</button></td></tr>';
+  }).join('');
+}
+function deleteImport(id){if(!confirm('Xoa ban ghi nhap hang nay? (se xoa ca tren Google Sheets)'))return;DB.imports=DB.imports.filter(function(i){return i.id!==id;});saveToStorage();deleteFromGS('import',id);showToast('Da xoa ban ghi nhap hang','warning');checkAlerts();renderImports();}
+
+function renderExports(){
+  var bs=document.getElementById('expBranchFilter'),bc=bs.value;
+  bs.innerHTML='<option value="">Tat ca CN</option>'+DB.branches.map(function(b){return '<option value="'+b.id+'"'+(b.id===bc?' selected':'')+'>'+b.code+' \u2013 '+esc(b.name)+'</option>';}).join('');
+  var search=document.getElementById('expSearch').value.toLowerCase(),bf=bs.value,tf=document.getElementById('expTypeFilter').value,df=document.getElementById('expDateFrom').value,dt=document.getElementById('expDateTo').value;
+  var data=DB.exports.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  if(bf)data=data.filter(function(e){return e.branchId===bf;});if(tf)data=data.filter(function(e){return e.type===tf;});
+  if(df)data=data.filter(function(e){return e.date>=df;});if(dt)data=data.filter(function(e){return e.date<=dt;});
+  if(search)data=data.filter(function(e){var item=DB.items.find(function(i){return i.id===e.itemId;});return item&&item.name.toLowerCase().indexOf(search)>=0;});
+  var tl={gift:'🎁 Xuat tang',sell:'💰 Xuat ban',transfer:'🔄 Xuat chuyen CN',dispose:'🗑️ Xuat bo'},tb={gift:'badge-green',sell:'badge-navy',transfer:'badge-orange',dispose:'badge-red'};
+  var tbody=document.getElementById('expBody');
+  if(data.length===0){tbody.innerHTML='<tr><td colspan="12" class="text-center text-gray" style="padding:24px">Khong co du lieu</td></tr>';return;}
+  tbody.innerHTML=data.map(function(exp,idx){
+    var item=DB.items.find(function(i){return i.id===exp.itemId;}),branch=DB.branches.find(function(b){return b.id===exp.branchId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null,trB=exp.transferTo?DB.branches.find(function(b){return b.id===exp.transferTo;}):null;
+    return '<tr><td class="text-gray">'+(idx+1)+'</td><td>'+fmtDate(exp.date)+'</td><td><span class="badge badge-navy">'+(branch?branch.code:'?')+'</span></td><td>'+(cat?cat.icon+' '+esc(cat.name):'\u2014')+'</td><td class="fw-bold">'+(item?esc(item.name):'?')+'</td><td><span class="badge '+(tb[exp.type]||'badge-gray')+'">'+(tl[exp.type]||exp.type)+'</span></td><td class="fw-bold text-red">'+fmtN(exp.qty)+'</td><td>'+fmt(exp.unitPrice)+'</td><td class="fw-bold">'+fmt(exp.total)+'</td><td>'+(trB?'<span class="badge badge-orange">'+trB.code+'</span>':'\u2014')+'</td><td style="font-size:12px">'+(exp.note||'\u2014')+'</td><td><button class="btn btn-danger btn-sm" onclick="deleteExport(\''+exp.id+'\')">🗑️</button></td></tr>';
+  }).join('');
+}
+function deleteExport(id){if(!confirm('Xoa ban ghi xuat hang nay? (se xoa ca tren Google Sheets)'))return;DB.exports=DB.exports.filter(function(e){return e.id!==id;});saveToStorage();deleteFromGS('export',id);showToast('Da xoa ban ghi xuat hang','warning');checkAlerts();renderExports();}
+
+var rptBranch='ALL';
+function setRptBranch(id){rptBranch=id;renderReportBranch();}
+function buildBranchRows(branchId){
+  var rows=[];
+  DB.categories.forEach(function(cat){
+    DB.items.filter(function(i){return i.catId===cat.id;}).forEach(function(item){
+      var ti=getTotalImported(item.id,branchId),te=getTotalExported(item.id,branchId);if(ti===0&&te===0)return;
+      var stock=getFIFOStock(item.id,branchId),ebt={gift:0,sell:0,transfer:0,dispose:0};
+      DB.exports.filter(function(e){return e.itemId===item.id&&e.branchId===branchId;}).forEach(function(e){ebt[e.type]=(ebt[e.type]||0)+e.qty;});
+      rows.push({cat:cat,item:item,totalImp:ti,totalExp:te,stock:stock,expByType:ebt});
+    });
+  });
+  return rows;
+}
+function branchTableHTML(rows,branchId){
+  var h='<div class="table-wrap"><table class="summary-table"><thead><tr><th>Danh muc</th><th>Vat pham</th><th>DVT</th><th>Tong nhap</th><th>Xuat tang</th><th>Xuat ban</th><th>Xuat chuyen</th><th>Xuat bo</th><th>Tong xuat</th><th>Ton kho</th><th>Don gia FIFO</th><th>Gia tri ton</th></tr></thead><tbody>';
+  rows.forEach(function(r){h+='<tr'+(isAlert(r.item,branchId)?' class="alert-row"':'')+'>'+
+    '<td>'+(r.cat?r.cat.icon+' '+esc(r.cat.name):'\u2014')+'</td><td class="fw-bold">'+esc(r.item.name)+'</td><td>'+esc(r.item.unit)+'</td>'+
+    '<td class="text-green fw-bold">'+fmtN(r.totalImp)+'</td><td>'+fmtN(r.expByType.gift)+'</td><td>'+fmtN(r.expByType.sell)+'</td><td>'+fmtN(r.expByType.transfer)+'</td><td>'+fmtN(r.expByType.dispose)+'</td>'+
+    '<td class="text-red fw-bold">'+fmtN(r.totalExp)+'</td><td class="fw-bold'+(r.stock.qty===0?' text-red':isAlert(r.item,branchId)?' text-red':'')+'">'+fmtN(r.stock.qty)+'</td>'+
+    '<td>'+(r.stock.avgPrice>0?fmt(r.stock.avgPrice):'\u2014')+'</td><td class="fw-bold">'+(r.stock.value>0?fmt(r.stock.value):'\u2014')+'</td></tr>';});
+  h+='<tr class="grand-total"><td colspan="3">TONG CONG</td>'+
+    '<td>'+fmtN(rows.reduce(function(s,r){return s+r.totalImp;},0))+'</td>'+
+    '<td>'+fmtN(rows.reduce(function(s,r){return s+r.expByType.gift;},0))+'</td>'+
+    '<td>'+fmtN(rows.reduce(function(s,r){return s+r.expByType.sell;},0))+'</td>'+
+    '<td>'+fmtN(rows.reduce(function(s,r){return s+r.expByType.transfer;},0))+'</td>'+
+    '<td>'+fmtN(rows.reduce(function(s,r){return s+r.expByType.dispose;},0))+'</td>'+
+    '<td>'+fmtN(rows.reduce(function(s,r){return s+r.totalExp;},0))+'</td>'+
+    '<td class="fw-bold">'+fmtN(rows.reduce(function(s,r){return s+r.stock.qty;},0))+'</td>'+
+    '<td>\u2014</td><td class="fw-bold">'+fmt(rows.reduce(function(s,r){return s+r.stock.value;},0))+'</td></tr>'+
+    '</tbody></table></div>';
+  return h;
+}
+function renderReportBranch(){
+  var te=document.getElementById('rptBranchTabs');
+  te.innerHTML='<div class="branch-tab'+(rptBranch==='ALL'?' active':'')+'" onclick="setRptBranch(\'ALL\')">🌐 Tat ca CN</div>'+
+    DB.branches.map(function(b){return '<div class="branch-tab'+(rptBranch===b.id?' active':'')+'" onclick="setRptBranch(\''+b.id+'\')">'+b.code+' \u2013 '+esc(b.name)+'</div>';}).join('');
+  var content=document.getElementById('rptBranchContent');
+  if(rptBranch==='ALL'){
+    var allRows=[];DB.branches.forEach(function(branch){var rows=buildBranchRows(branch.id);if(rows.length>0)allRows.push({branch:branch,rows:rows});});
+    if(allRows.length===0){content.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co du lieu</p></div>';return;}
+    var tiv=DB.imports.reduce(function(s,i){return s+(i.total||0);},0),tsv=allRows.reduce(function(s,a){return s+a.rows.reduce(function(s2,r){return s2+r.stock.value;},0);},0);
+    var h='<div class="stats-grid" style="margin-bottom:14px"><div class="stat-card"><div class="stat-icon green">📥</div><div><div class="stat-value" style="font-size:14px">'+fmt(tiv)+'</div><div class="stat-label">Tong nhap (tat ca CN)</div></div></div><div class="stat-card"><div class="stat-icon navy">📦</div><div><div class="stat-value" style="font-size:14px">'+fmt(tsv)+'</div><div class="stat-label">Tong ton kho (tat ca CN)</div></div></div></div>';
+    allRows.forEach(function(a){
+      var branch=a.branch,rows=a.rows,biv=DB.imports.filter(function(i){return i.branchId===branch.id;}).reduce(function(s,i){return s+(i.total||0);},0),bsv=rows.reduce(function(s,r){return s+r.stock.value;},0);
+      h+='<div style="margin-bottom:20px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span class="badge badge-navy" style="font-size:13px;padding:4px 10px">'+branch.code+'</span><strong style="color:var(--navy)">'+esc(branch.name)+'</strong><span style="font-size:11px;color:var(--gray-400)">'+esc(branch.entityName)+'</span><span style="margin-left:auto;font-size:12px">Nhap: <strong>'+fmt(biv)+'</strong> | Ton: <strong>'+fmt(bsv)+'</strong></span></div>'+branchTableHTML(rows,branch.id)+'</div>';
+    });
+    content.innerHTML=h;return;
+  }
+  var branch=DB.branches.find(function(b){return b.id===rptBranch;});if(!branch)return;
+  var rows=buildBranchRows(rptBranch);
+  if(rows.length===0){content.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co du lieu cho chi nhanh nay</p></div>';return;}
+  var tiv=DB.imports.filter(function(i){return i.branchId===rptBranch;}).reduce(function(s,i){return s+(i.total||0);},0),tsv=rows.reduce(function(s,r){return s+r.stock.value;},0),tev=DB.exports.filter(function(e){return e.branchId===rptBranch;}).reduce(function(s,e){return s+(e.total||0);},0);
+  content.innerHTML='<div class="info-box">📍 Chi nhanh: <strong>'+branch.code+' \u2013 '+esc(branch.name)+'</strong> | Phap nhan: <strong>'+esc(branch.entityName)+'</strong></div>'+
+    '<div class="stats-grid" style="margin-bottom:14px"><div class="stat-card"><div class="stat-icon green">📥</div><div><div class="stat-value" style="font-size:14px">'+fmt(tiv)+'</div><div class="stat-label">Tong gia tri nhap</div></div></div><div class="stat-card"><div class="stat-icon red">📤</div><div><div class="stat-value" style="font-size:14px">'+fmt(tev)+'</div><div class="stat-label">Tong gia tri xuat</div></div></div><div class="stat-card"><div class="stat-icon navy">📦</div><div><div class="stat-value" style="font-size:14px">'+fmt(tsv)+'</div><div class="stat-label">Gia tri ton kho</div></div></div></div>'+
+    branchTableHTML(rows,rptBranch);
+}
+
+function renderReportSummary(){
+  var eb=DB.branches.filter(function(b){return b.entity==='embassy-english';}),content=document.getElementById('summaryContent'),itemRows=[];
+  DB.categories.forEach(function(cat){
+    DB.items.filter(function(i){return i.catId===cat.id;}).forEach(function(item){
+      var ha=false,bb={};
+      eb.forEach(function(branch){var ti=getTotalImported(item.id,branch.id),te=getTotalExported(item.id,branch.id),stock=getFIFOStock(item.id,branch.id),ebt={gift:0,sell:0,transfer:0,dispose:0};DB.exports.filter(function(e){return e.itemId===item.id&&e.branchId===branch.id;}).forEach(function(e){ebt[e.type]=(ebt[e.type]||0)+e.qty;});bb[branch.id]={ti:ti,te:te,stock:stock,ebt:ebt};if(ti>0||te>0)ha=true;});
+      if(!ha)return;
+      var ai=eb.reduce(function(s,b){return s+bb[b.id].ti;},0),ae=eb.reduce(function(s,b){return s+bb[b.id].te;},0),ag=eb.reduce(function(s,b){return s+bb[b.id].ebt.gift;},0),as=eb.reduce(function(s,b){return s+bb[b.id].ebt.sell;},0),at=eb.reduce(function(s,b){return s+bb[b.id].ebt.transfer;},0),ad=eb.reduce(function(s,b){return s+bb[b.id].ebt.dispose;},0),aq=eb.reduce(function(s,b){return s+bb[b.id].stock.qty;},0),av=eb.reduce(function(s,b){return s+bb[b.id].stock.value;},0);
+      itemRows.push({cat:cat,item:item,bb:bb,ai:ai,ae:ae,ag:ag,as:as,at:at,ad:ad,aq:aq,av:av});
+    });
+  });
+  if(itemRows.length===0){content.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co du lieu</p></div>';return;}
+  var tiv=DB.imports.filter(function(i){return eb.some(function(b){return b.id===i.branchId;});}).reduce(function(s,i){return s+(i.total||0);},0),tsv=itemRows.reduce(function(s,r){return s+r.av;},0);
+  var bc=eb.map(function(b){return '<th>Ton '+b.code+'</th>';}).join('');
+  var h='<div class="stats-grid" style="margin-bottom:14px"><div class="stat-card"><div class="stat-icon green">📥</div><div><div class="stat-value" style="font-size:14px">'+fmt(tiv)+'</div><div class="stat-label">Tong nhap (4 CN)</div></div></div><div class="stat-card"><div class="stat-icon navy">📦</div><div><div class="stat-value" style="font-size:14px">'+fmt(tsv)+'</div><div class="stat-label">Tong ton kho (4 CN)</div></div></div></div>'+
+    '<div class="table-wrap"><table class="summary-table"><thead><tr><th>Danh muc</th><th>Vat pham</th><th>DVT</th><th>Tong nhap</th><th>Xuat tang</th><th>Xuat ban</th><th>Xuat chuyen</th><th>Xuat bo</th><th>Tong xuat</th>'+bc+'<th>Tong ton</th><th>Gia tri ton</th></tr></thead><tbody>';
+  itemRows.forEach(function(r){var bsc=eb.map(function(b){return '<td>'+fmtN(r.bb[b.id].stock.qty)+'</td>';}).join('');h+='<tr><td>'+(r.cat?r.cat.icon+' '+esc(r.cat.name):'\u2014')+'</td><td class="fw-bold">'+esc(r.item.name)+'</td><td>'+esc(r.item.unit)+'</td><td class="text-green fw-bold">'+fmtN(r.ai)+'</td><td>'+fmtN(r.ag)+'</td><td>'+fmtN(r.as)+'</td><td>'+fmtN(r.at)+'</td><td>'+fmtN(r.ad)+'</td><td class="text-red fw-bold">'+fmtN(r.ae)+'</td>'+bsc+'<td class="fw-bold">'+fmtN(r.aq)+'</td><td class="fw-bold">'+fmt(r.av)+'</td></tr>';});
+  var tbc=eb.map(function(b){return '<td class="fw-bold">'+fmtN(itemRows.reduce(function(s,r){return s+r.bb[b.id].stock.qty;},0))+'</td>';}).join('');
+  h+='<tr class="grand-total"><td colspan="3">TONG CONG</td><td>'+fmtN(itemRows.reduce(function(s,r){return s+r.ai;},0))+'</td><td>'+fmtN(itemRows.reduce(function(s,r){return s+r.ag;},0))+'</td><td>'+fmtN(itemRows.reduce(function(s,r){return s+r.as;},0))+'</td><td>'+fmtN(itemRows.reduce(function(s,r){return s+r.at;},0))+'</td><td>'+fmtN(itemRows.reduce(function(s,r){return s+r.ad;},0))+'</td><td>'+fmtN(itemRows.reduce(function(s,r){return s+r.ae;},0))+'</td>'+tbc+'<td class="fw-bold">'+fmtN(itemRows.reduce(function(s,r){return s+r.aq;},0))+'</td><td class="fw-bold">'+fmt(tsv)+'</td></tr></tbody></table></div>';
+  content.innerHTML=h;
+}
+
+function renderSettings(){
+  document.getElementById('alertPct').value=DB.settings.alertPct;document.getElementById('alertQty').value=DB.settings.alertQty;
+  document.getElementById('emailRecipient').value=DB.settings.emailRecipient;document.getElementById('emailSubject').value=DB.settings.emailSubject;
+  if(DB.settings.gsSheetId)document.getElementById('gsSheetId').value=DB.settings.gsSheetId;
+  if(DB.settings.gsWebAppUrl)document.getElementById('gsWebAppUrl').value=DB.settings.gsWebAppUrl;
+  updateGSStatus();
+  var el=document.getElementById('entityList');
+  if(el){if(!DB.entities||!DB.entities.length){el.innerHTML='<p class="text-gray" style="font-size:12px">Chua co phap nhan nao</p>';}
+  else{var eh='';DB.entities.forEach(function(e,idx){eh+='<div class="entity-card"><div><div class="entity-name">'+esc(e.name)+'</div><div style="font-size:11px;color:var(--gray-400);font-family:monospace">'+esc(e.id)+'</div></div><button class="btn btn-white btn-sm" onclick="editEntityByIdx('+idx+')">✏️</button></div>';});el.innerHTML=eh;}}
+  var pe=document.getElementById('priceDefaults'),iwp=DB.items.filter(function(i){return i.sellPrice>0;});
+  if(iwp.length===0){pe.innerHTML='<p class="text-gray" style="font-size:12px">Chua co vat pham nao co gia ban dinh san</p>';}
+  else{var ph='';iwp.forEach(function(item){var hist=(DB.priceHistory&&DB.priceHistory[item.id])||[],hh='';if(hist.length>0){hh='<div class="price-history">';hist.slice().reverse().slice(0,5).forEach(function(h){hh+='<div class="price-history-item">'+new Date(h.date).toLocaleDateString('vi-VN')+': '+(h.oldPrice>0?fmt(h.oldPrice):'Chua co')+' \u2192 '+fmt(h.newPrice)+'</div>';});hh+='</div>';}ph+='<div class="form-group mt-8"><label>'+esc(item.name)+'</label><div class="num-group"><input type="number" id="price_'+item.id+'" value="'+item.sellPrice+'" min="0"><span class="unit">\u20ab</span></div>'+hh+'</div>';});pe.innerHTML=ph;}
+  var be=document.getElementById('branchList'),bh='';DB.branches.forEach(function(b){bh+='<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-100)"><div><span class="badge badge-navy">'+b.code+'</span> <span style="font-size:13px">'+esc(b.name)+'</span></div><span style="font-size:11px;color:var(--gray-400)">'+esc(b.entityName)+'</span></div>';});be.innerHTML=bh;
+}
+function saveAlertSettings(){DB.settings.alertPct=parseFloat(document.getElementById('alertPct').value)||10;DB.settings.alertQty=parseInt(document.getElementById('alertQty').value)||20;saveToStorage();showToast('Da luu cai dat alert','success');checkAlerts();}
+function saveEmailSettings(){DB.settings.emailRecipient=document.getElementById('emailRecipient').value;DB.settings.emailSubject=document.getElementById('emailSubject').value;saveToStorage();showToast('Da luu cai dat email','success');}
+function savePriceDefaults(){DB.items.forEach(function(item){var el=document.getElementById('price_'+item.id);if(el){var np=parseFloat(el.value)||0;if(np!==item.sellPrice){recordPriceHistory(item.id,item.sellPrice,np);item.sellPrice=np;}}});saveToStorage();showToast('Da luu gia ban dinh san','success');}
+function recordPriceHistory(itemId,oldPrice,newPrice){if(!DB.priceHistory)DB.priceHistory={};if(!DB.priceHistory[itemId])DB.priceHistory[itemId]=[];DB.priceHistory[itemId].push({date:new Date().toISOString(),oldPrice:oldPrice,newPrice:newPrice});}
+function openAddPriceItemModal(){var sel=document.getElementById('priceItemId');sel.innerHTML=DB.items.map(function(i){return '<option value="'+i.id+'">'+esc(i.name)+(i.sellPrice>0?' (hien: '+fmt(i.sellPrice)+')':'')+'</option>';}).join('');document.getElementById('priceItemPrice').value='';openModal('modal-add-price-item');}
+function addPriceItem(){var itemId=document.getElementById('priceItemId').value,price=parseFloat(document.getElementById('priceItemPrice').value)||0;if(!itemId||price<=0){showToast('Vui long chon vat pham va nhap gia','error');return;}var item=DB.items.find(function(i){return i.id===itemId;});if(!item)return;recordPriceHistory(itemId,item.sellPrice,price);item.sellPrice=price;saveToStorage();closeModal('modal-add-price-item');showToast('Da them gia ban cho '+item.name,'success');renderSettings();}
+function saveEntity(){var eid=document.getElementById('editEntityId').value,id=document.getElementById('entityId').value.trim().toLowerCase().replace(/\s+/g,'-'),name=document.getElementById('entityName').value.trim();if(!id||!name){showToast('Vui long nhap day du thong tin','error');return;}if(!eid&&DB.entities.some(function(e){return e.id===id;})){showToast('Ma phap nhan da ton tai','error');return;}if(eid){var idx=DB.entities.findIndex(function(e){return e.id===eid;});if(idx>=0)DB.entities[idx]={id:id,name:name};}else{DB.entities.push({id:id,name:name});}saveToStorage();closeModal('modal-add-entity');showToast('Da luu phap nhan','success');renderSettings();}
+function editEntityByIdx(idx){var e=DB.entities[idx];if(!e)return;document.getElementById('editEntityId').value=e.id;document.getElementById('entityId').value=e.id;document.getElementById('entityName').value=e.name;document.getElementById('entityNote').value='';openModal('modal-add-entity');}
+function initBranchEntitySelect(){var sel=document.getElementById('branchEntity');if(!sel)return;var entities=DB.entities&&DB.entities.length?DB.entities:[{id:'embassy-english',name:'Cong ty CP Embassy English'},{id:'embassy-cam-ranh',name:'Cong ty CP Embassy Cam Ranh'},{id:'embassy-tuy-hoa',name:'Cong ty CP Embassy Tuy Hoa'},{id:'embassy-gia-lai',name:'Cong ty CP Embassy Gia Lai'}];sel.innerHTML=entities.map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+'</option>';}).join('');}
+function saveBranch(){var code=document.getElementById('branchCode').value.trim().toUpperCase(),name=document.getElementById('branchName').value.trim(),entityId=document.getElementById('branchEntity').value;if(!code||!name){showToast('Vui long nhap ma va ten chi nhanh','error');return;}if(DB.branches.some(function(b){return b.code===code;})){showToast('Ma chi nhanh da ton tai','error');return;}var entity=DB.entities?DB.entities.find(function(e){return e.id===entityId;}):null,entityName=entity?entity.name:entityId;DB.branches.push({id:code,code:code,name:name,entity:entityId,entityName:entityName});document.getElementById('branchCode').value='';document.getElementById('branchName').value='';saveToStorage();closeModal('modal-add-branch');showToast('Da them chi nhanh '+code,'success');renderSettings();}
+function simulateMonthlyExport(){var my=nowMonthYear();showToast('Dang xuat bao cao thang '+my+'...','info');setTimeout(function(){exportExcel('all');showToast('Da xuat bao cao thang '+my+'. Vui long gui email thu cong den: '+DB.settings.emailRecipient,'warning',6000);},500);}
+function checkMonthlyExport(){var now=new Date(),ld=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();if(now.getDate()===ld&&now.getHours()===23&&now.getMinutes()>=55){var key='embassy_monthly_'+now.getFullYear()+'_'+(now.getMonth()+1);if(!localStorage.getItem(key)){localStorage.setItem(key,'1');showToast('Da den cuoi thang! Dang xuat bao cao...','warning',8000);setTimeout(function(){exportExcel('all');},2000);}}}
+setInterval(checkMonthlyExport,60000);
+
+var GS_SCRIPT_CODE=["// =====================================================================","// EMBASSY INVENTORY \u2013 GOOGLE APPS SCRIPT (BAN DA SUA)","// Dan toan bo code nay vao Apps Script Editor (thay the code cu)","// Deploy -> Manage deployments (hoac New deployment) -> Web app","//   Execute as: Me   |   Who has access: Anyone","// Sau khi sua code PHAI deploy lai (New version) thi moi co hieu luc.","// =====================================================================","","function doPost(e) {","  try {","    var data = JSON.parse(e.postData.contents);","    var ss = SpreadsheetApp.getActiveSpreadsheet();","    if (data.action === \"sync_all\")      { syncAllData(ss, data.payload); return ok(\"Dong bo thanh cong\"); }","    if (data.action === \"add_import\")    { appendImport(ss, data.payload);  return ok(); }","    if (data.action === \"add_export\")    { appendExport(ss, data.payload);  return ok(); }","    if (data.action === \"delete_import\") { deleteRowById(ss, \"Nhap_Hang\", data.payload.id); return ok(); }","    if (data.action === \"delete_export\") { deleteRowById(ss, \"Xuat_Hang\", data.payload.id); return ok(); }","    return err(\"Unknown action\");","  } catch(e) { return err(e.toString()); }","}","","function doGet(e) {","  try {","    var action = e.parameter.action;","    var ss = SpreadsheetApp.getActiveSpreadsheet();","    if (action === \"get_all\") {","      var result = { imports: getSheetData(ss, \"Nhap_Hang\"), exports: getSheetData(ss, \"Xuat_Hang\"), lastSync: new Date().toISOString() };","      return ContentService.createTextOutput(JSON.stringify({success:true, data:result})).setMimeType(ContentService.MimeType.JSON);","    }","    return ok(\"Embassy Inventory API OK\");","  } catch(e2) { return err(e2.toString()); }","}","","function getSheetData(ss, sheetName) {","  var sheet = ss.getSheetByName(sheetName);","  if (!sheet || sheet.getLastRow() <= 1) return [];","  var data = sheet.getDataRange().getValues();","  var headers = data[0]; var rows = [];","  for (var i = 1; i < data.length; i++) {","    var row = {}; for (var j = 0; j < headers.length; j++) { row[headers[j]] = data[i][j]; }","    rows.push(row);","  }","  return rows;","}","","function ok(msg)  { return ContentService.createTextOutput(JSON.stringify({success:true,message:msg||\"OK\"})).setMimeType(ContentService.MimeType.JSON); }","function err(msg) { return ContentService.createTextOutput(JSON.stringify({success:false,error:msg})).setMimeType(ContentService.MimeType.JSON); }","","var IMP_HEADERS = [\"ID\",\"Ngay\",\"Chi nhanh\",\"Danh muc\",\"Vat pham\",\"SL\",\"Don gia\",\"Thanh tien\",\"VAT%\",\"Tien VAT\",\"Tong TT\",\"Phi VC\",\"NCC\",\"MST\",\"SDT\",\"Ghi chu\"];","var EXP_HEADERS = [\"ID\",\"Ngay\",\"Chi nhanh\",\"Danh muc\",\"Vat pham\",\"Loai xuat\",\"SL\",\"Don gia\",\"Thanh tien\",\"CN nhan\",\"Ghi chu\"];","","// THEM 1 DONG NHAP \u2013 map dung tung cot theo ten truong (khong dung Object.values)","function appendImport(ss, p) {","  var sheet = getOrCreate(ss, \"Nhap_Hang\");","  if (sheet.getLastRow() === 0) sheet.appendRow(IMP_HEADERS);","  sheet.appendRow([p.id, p.date, p.branchId, p.catName, p.itemName, p.qty, p.unitPrice, p.subtotal, p.vatPct, p.vatAmt, p.total, p.shipping, p.supplierName, p.supplierTax, p.supplierPhone, p.note]);","}","","// THEM 1 DONG XUAT \u2013 map dung tung cot theo ten truong","function appendExport(ss, p) {","  var sheet = getOrCreate(ss, \"Xuat_Hang\");","  if (sheet.getLastRow() === 0) sheet.appendRow(EXP_HEADERS);","  sheet.appendRow([p.id, p.date, p.branchId, p.catName, p.itemName, p.type, p.qty, p.unitPrice, p.total, p.transferTo, p.note]);","}","","// XOA 1 DONG theo ID (cot dau tien)","function deleteRowById(ss, sheetName, id) {","  var sheet = ss.getSheetByName(sheetName);","  if (!sheet || sheet.getLastRow() <= 1) return;","  var ids = sheet.getRange(1, 1, sheet.getLastRow(), 1).getValues();","  for (var i = ids.length - 1; i >= 1; i--) { // bo qua hang tieu de (i=0)","    if (String(ids[i][0]) === String(id)) { sheet.deleteRow(i + 1); }","  }","}","","function syncAllData(ss, payload) {","  var impSheet = getOrCreate(ss, \"Nhap_Hang\"); impSheet.clearContents();","  impSheet.appendRow(IMP_HEADERS);","  (payload.imports||[]).forEach(function(r){ impSheet.appendRow([r.id,r.date,r.branchId,r.catName,r.itemName,r.qty,r.unitPrice,r.subtotal,r.vatPct,r.vatAmt,r.total,r.shipping,r.supplierName,r.supplierTax,r.supplierPhone,r.note]); });","  var expSheet = getOrCreate(ss, \"Xuat_Hang\"); expSheet.clearContents();","  expSheet.appendRow(EXP_HEADERS);","  (payload.exports||[]).forEach(function(r){ expSheet.appendRow([r.id,r.date,r.branchId,r.catName,r.itemName,r.type,r.qty,r.unitPrice,r.total,r.transferTo,r.note]); });","  var invSheet = getOrCreate(ss, \"Ton_Kho\"); invSheet.clearContents();","  invSheet.appendRow([\"Danh muc\",\"Vat pham\",\"DVT\",\"Chi nhanh\",\"Tong nhap\",\"Tong xuat\",\"Ton kho\",\"Don gia FIFO\",\"Gia tri ton\",\"Trang thai\"]);","  (payload.inventory||[]).forEach(function(r){ invSheet.appendRow([r.catName,r.itemName,r.unit,r.branchCode,r.totalImp,r.totalExp,r.stockQty,r.avgPrice,r.stockValue,r.status]); });","  var meta = getOrCreate(ss, \"Meta\"); meta.getRange(\"A1\").setValue(\"Cap nhat lan cuoi:\"); meta.getRange(\"B1\").setValue(new Date());","}","","function getOrCreate(ss, name) { var s=ss.getSheetByName(name); if (!s) s=ss.insertSheet(name); return s; }"].join('\n');
+
+
+// ============================================================
+// LOAD DATA FROM GOOGLE SHEETS (PULL)
+// ============================================================
+function showSyncStatus(icon, text, time, show) {
+  var bar = document.getElementById('syncStatusBar');
+  var iconEl = document.getElementById('syncStatusIcon');
+  var textEl = document.getElementById('syncStatusText');
+  var timeEl = document.getElementById('syncStatusTime');
+  if (show === false) { bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  if (iconEl) iconEl.textContent = icon;
+  if (textEl) textEl.textContent = text;
+  if (timeEl) timeEl.textContent = time || '';
+}
+
+function loadFromGS(silent) {
+  var url = DB.settings.gsWebAppUrl;
+  if (!url || !gsConfigured(url)) {
+    if(!silent){ showToast('Chua cau hinh Google Sheets. Vao Settings de cau hinh.', 'warning', 4000); showPage('settings'); }
+    return;
+  }
+  if(!silent){
+    showSyncStatus('🔄', 'Dang tai du lieu tu Google Sheets...', '', true);
+    document.getElementById('syncStatusText').classList.add('sync-pulse');
+    showToast('Dang tai du lieu tu Google Sheets...', 'info');
+  }
+
+  fetch(url + '?action=get_all&t=' + Date.now(), { method: 'GET', mode: 'cors', cache: 'no-store' })
+    .then(function(response) { return response.json(); })
+    .then(function(result) {
+      var st=document.getElementById('syncStatusText'); if(st) st.classList.remove('sync-pulse');
+      if (!result.success) {
+        if(!silent){
+          showSyncStatus('❌', 'Loi tai du lieu: ' + (result.error || 'Unknown'), '', true);
+          showToast('Loi tai du lieu tu Google Sheets', 'error', 5000);
+          setTimeout(function(){ showSyncStatus('','','',false); }, 5000);
+        }
+        return;
+      }
+      var imported = mergeFromGS(result.data);
+      var now = new Date().toLocaleString('vi-VN');
+      DB.settings.gsLastSync = new Date().toISOString();
+      saveToStorage();
+      updateGSStatus();
+      if (imported.imports > 0 || imported.exports > 0) {
+        checkAlerts();
+        renderPage(currentPage);
+      }
+      if(!silent){
+        showSyncStatus('✅', 'Da tai du lieu tu Google Sheets thanh cong! (+' + imported.imports + ' nhap, +' + imported.exports + ' xuat)', now, true);
+        showToast('Da tai ' + imported.imports + ' ban ghi nhap, ' + imported.exports + ' ban ghi xuat tu Google Sheets!', 'success', 5000);
+        setTimeout(function(){ showSyncStatus('','','',false); }, 8000);
+      } else if (imported.imports > 0 || imported.exports > 0) {
+        showToast('Da cap nhat du lieu moi tu Google Sheets (+'+imported.imports+' nhap, +'+imported.exports+' xuat)', 'info', 4000);
+      }
+    })
+    .catch(function(err) {
+      var st=document.getElementById('syncStatusText'); if(st) st.classList.remove('sync-pulse');
+      if(!silent){
+        showSyncStatus('⚠️', 'Khong the doc du lieu (CORS/Deploy). Kiem tra lai Web App URL & quyen "Anyone".', '', true);
+        showToast('Loi tai du lieu: ' + err.message + '. Kiem tra Deploy "Anyone can access".', 'warning', 6000);
+        setTimeout(function(){ showSyncStatus('','','',false); }, 8000);
+      }
+    });
+}
+
+function mergeFromGS(data) {
+  var imported = { imports: 0, exports: 0 };
+  if (!data) return imported;
+
+  // Merge imports - add records that don't exist locally
+  var existingImpIds = DB.imports.map(function(i){ return i.id; });
+  (data.imports || []).forEach(function(row) {
+    var id = row['ID'] || row['id'];
+    if (!id || existingImpIds.indexOf(String(id)) >= 0) return;
+    // Reconstruct import record from sheet row
+    var branchId = String(row['Chi nhanh'] || row['branchId'] || '').split(' - ')[0].trim();
+    var itemId = findItemIdByName(String(row['Vat pham'] || row['itemName'] || ''));
+    if (!branchId || !itemId) return;
+    DB.imports.push({
+      id: String(id),
+      date: formatSheetDate(row['Ngay'] || row['date']),
+      branchId: branchId,
+      itemId: itemId,
+      qty: parseFloat(row['SL'] || row['qty']) || 0,
+      unitPrice: parseFloat(row['Don gia'] || row['unitPrice']) || 0,
+      subtotal: parseFloat(row['Thanh tien'] || row['subtotal']) || 0,
+      vatPct: parseFloat(row['VAT%'] || row['vatPct']) || 0,
+      vatAmt: parseFloat(row['Tien VAT'] || row['vatAmt']) || 0,
+      total: parseFloat(row['Tong TT'] || row['total']) || 0,
+      unitPriceWithVat: parseFloat(row['Tong TT'] || row['total']) / (parseFloat(row['SL'] || row['qty']) || 1),
+      shipping: parseFloat(row['Phi VC'] || row['shipping']) || 0,
+      supplierName: String(row['NCC'] || row['supplierName'] || ''),
+      supplierTax: String(row['MST'] || row['supplierTax'] || ''),
+      supplierPhone: String(row['SDT'] || row['supplierPhone'] || ''),
+      note: String(row['Ghi chu'] || row['note'] || ''),
+      createdAt: new Date().toISOString()
+    });
+    imported.imports++;
+  });
+
+  // Merge exports
+  var existingExpIds = DB.exports.map(function(e){ return e.id; });
+  var typeMap = {'Xuat tang':'gift','Xuat ban':'sell','Xuat chuyen CN':'transfer','Xuat bo':'dispose'};
+  (data.exports || []).forEach(function(row) {
+    var id = row['ID'] || row['id'];
+    if (!id || existingExpIds.indexOf(String(id)) >= 0) return;
+    var branchId = String(row['Chi nhanh'] || row['branchId'] || '').split(' - ')[0].trim();
+    var itemId = findItemIdByName(String(row['Vat pham'] || row['itemName'] || ''));
+    if (!branchId || !itemId) return;
+    var typeStr = String(row['Loai xuat'] || row['type'] || '');
+    var type = typeMap[typeStr] || typeStr;
+    var transferToCode = String(row['CN nhan'] || row['transferTo'] || '').trim();
+    DB.exports.push({
+      id: String(id),
+      date: formatSheetDate(row['Ngay'] || row['date']),
+      branchId: branchId,
+      itemId: itemId,
+      type: type,
+      qty: parseFloat(row['SL'] || row['qty']) || 0,
+      unitPrice: parseFloat(row['Don gia'] || row['unitPrice']) || 0,
+      total: parseFloat(row['Thanh tien'] || row['total']) || 0,
+      transferTo: transferToCode || null,
+      note: String(row['Ghi chu'] || row['note'] || ''),
+      createdAt: new Date().toISOString()
+    });
+    imported.exports++;
+  });
+
+  if (imported.imports > 0 || imported.exports > 0) {
+    saveToStorage();
+  }
+  return imported;
+}
+
+function findItemIdByName(name) {
+  if (!name) return null;
+  var item = DB.items.find(function(i){ return i.name === name; });
+  return item ? item.id : null;
+}
+
+function formatSheetDate(val) {
+  if (!val) return today();
+  if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}/)) return val.substring(0,10);
+  // Handle Google Sheets date serial or Date object
+  try {
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  } catch(e) {}
+  return today();
+}
+
+// Auto-load from GS when page opens (if configured)
+function autoLoadFromGS() {
+  var url = DB.settings.gsWebAppUrl;
+  if (!url || !gsConfigured(url) || !DB.settings.gsSheetId) return; // Not configured, skip
+  showSyncStatus('🔄', 'Dang tu dong tai du lieu tu Google Sheets...', '', true);
+  setTimeout(function() { loadFromGS(false); }, 800); // Small delay for UI to render
+}
+
+// Tu dong dong bo dinh ky de moi may luon cap nhat (gan realtime)
+var _gsPollTimer = null;
+function isAnyModalOpen(){ return !!document.querySelector('.modal-overlay.show'); }
+function startGSPolling() {
+  var url = DB.settings.gsWebAppUrl;
+  if (!url || !gsConfigured(url)) return;
+  if (_gsPollTimer) clearInterval(_gsPollTimer);
+  _gsPollTimer = setInterval(function() {
+    if (document.hidden) return;        // Tab dang an -> bo qua
+    if (isAnyModalOpen()) return;        // Dang nhap lieu -> khong lam phien
+    loadFromGS(true);                    // Tai nen, im lang
+  }, GS_POLL_MS);
+  // Khi quay lai tab -> tai lai ngay
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden && !isAnyModalOpen()) loadFromGS(true);
+  });
+}
+
+function saveGSConfig(){DB.settings.gsSheetId=document.getElementById('gsSheetId').value.trim();DB.settings.gsWebAppUrl=document.getElementById('gsWebAppUrl').value.trim();saveToStorage();showToast('Da luu cau hinh Google Sheets','success');updateGSStatus();}
+function updateGSStatus(){var el=document.getElementById('gsStatusDisplay');if(!el)return;var ls=document.getElementById('gsLastSync');if(DB.settings.gsWebAppUrl&&DB.settings.gsSheetId){el.innerHTML='<span class="gs-status connected">🟢 Da cau hinh</span>';if(DB.settings.gsLastSync&&ls)ls.textContent=new Date(DB.settings.gsLastSync).toLocaleString('vi-VN');}else{el.innerHTML='<span class="gs-status disconnected">⚫ Chua ket noi</span>';}}
+function testGSConnection(){var url=document.getElementById('gsWebAppUrl').value.trim();if(!url){showToast('Vui long nhap Web App URL truoc','error');return;}showToast('Dang kiem tra ket noi...','info');var el=document.getElementById('gsStatusDisplay');if(el)el.innerHTML='<span class="gs-status syncing">🟡 Dang kiem tra...</span>';fetch(url,{method:'GET',mode:'no-cors'}).then(function(){if(el)el.innerHTML='<span class="gs-status connected">🟢 Ket noi thanh cong</span>';showToast('Ket noi Google Sheets thanh cong!','success');}).catch(function(err){if(el)el.innerHTML='<span class="gs-status disconnected">🔴 Loi ket noi</span>';showToast('Loi ket noi: '+err.message,'error',5000);});}
+function buildSyncPayload(){var imports=DB.imports.map(function(imp){var item=DB.items.find(function(i){return i.id===imp.itemId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null;return{id:imp.id,date:imp.date,branchId:imp.branchId,catName:cat?cat.name:'',itemName:item?item.name:'',qty:imp.qty,unitPrice:imp.unitPrice,subtotal:imp.subtotal,vatPct:imp.vatPct,vatAmt:imp.vatAmt,total:imp.total,shipping:imp.shipping||0,supplierName:imp.supplierName||'',supplierTax:imp.supplierTax||'',supplierPhone:imp.supplierPhone||'',note:imp.note||''};});var exports=DB.exports.map(function(exp){var item=DB.items.find(function(i){return i.id===exp.itemId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null,trB=exp.transferTo?DB.branches.find(function(b){return b.id===exp.transferTo;}):null,tl={gift:'Xuat tang',sell:'Xuat ban',transfer:'Xuat chuyen CN',dispose:'Xuat bo'};return{id:exp.id,date:exp.date,branchId:exp.branchId,catName:cat?cat.name:'',itemName:item?item.name:'',type:tl[exp.type]||exp.type,qty:exp.qty,unitPrice:exp.unitPrice,total:exp.total,transferTo:trB?trB.code:'',note:exp.note||''};});var inventory=[];DB.items.forEach(function(item){var cat=DB.categories.find(function(c){return c.id===item.catId;});DB.branches.forEach(function(branch){var ti=getTotalImported(item.id,branch.id),te=getTotalExported(item.id,branch.id);if(ti===0&&te===0)return;var stock=getFIFOStock(item.id,branch.id),alert=isAlert(item,branch.id);inventory.push({catName:cat?cat.name:'',itemName:item.name,unit:item.unit,branchCode:branch.code,totalImp:ti,totalExp:te,stockQty:stock.qty,avgPrice:Math.round(stock.avgPrice),stockValue:Math.round(stock.value),status:stock.qty===0?'Het hang':alert?'Canh bao thap':'Binh thuong'});});});return{imports:imports,exports:exports,inventory:inventory};}
+function syncAllToGS(){
+  var url=DB.settings.gsWebAppUrl;
+  if(!url){showToast('Vui long cau hinh Google Sheets truoc','error');return;}
+  var el=document.getElementById('gsStatusDisplay');
+  if(el)el.innerHTML='<span class="gs-status syncing">🟡 Dang dong bo...</span>';
+  showSyncStatus('🔄','Dang day du lieu len Google Sheets...','',true);
+  showToast('Dang dong bo toan bo du lieu...','info');
+  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'sync_all',payload:buildSyncPayload()})})
+    .then(function(){
+      DB.settings.gsLastSync=new Date().toISOString();saveToStorage();
+      if(el)el.innerHTML='<span class="gs-status connected">🟢 Dong bo thanh cong</span>';
+      var ls=document.getElementById('gsLastSync');if(ls)ls.textContent=new Date().toLocaleString('vi-VN');
+      var now=new Date().toLocaleString('vi-VN');
+      showSyncStatus('✅','Da day toan bo du lieu len Google Sheets!',now,true);
+      showToast('Da dong bo toan bo du lieu len Google Sheets!','success');
+      setTimeout(function(){showSyncStatus('','','',false);},6000);
+    })
+    .catch(function(err){
+      if(el)el.innerHTML='<span class="gs-status disconnected">🔴 Loi dong bo</span>';
+      showSyncStatus('⚠️','Du lieu da duoc gui (no-cors mode). Kiem tra Google Sheets de xac nhan.','',true);
+      showToast('Du lieu da duoc gui. Kiem tra Google Sheets.','warning',5000);
+      setTimeout(function(){showSyncStatus('','','',false);},6000);
+    });}
+function syncTransactionToGS(type,data){var url=DB.settings.gsWebAppUrl;if(!url||!gsConfigured(url))return;fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:type==='import'?'add_import':'add_export',payload:data})}).then(function(){DB.settings.gsLastSync=new Date().toISOString();saveToStorage();updateGSStatus();}).catch(function(){});}
+function deleteFromGS(type,id){var url=DB.settings.gsWebAppUrl;if(!url||!gsConfigured(url))return;fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:type==='import'?'delete_import':'delete_export',payload:{id:String(id)}})}).then(function(){DB.settings.gsLastSync=new Date().toISOString();saveToStorage();}).catch(function(){});}
+function showGSScript(){var box=document.getElementById('gsScriptBox'),code=document.getElementById('gsScriptCode');if(box.style.display==='none'){box.style.display='block';code.value=GS_SCRIPT_CODE;}else{box.style.display='none';}}
+function copyGSScript(){var code=document.getElementById('gsScriptCode');code.select();document.execCommand('copy');showToast('Da copy code Apps Script!','success');}
+
+function exportExcel(mode){
+  mode=mode||'inventory';var wb=XLSX.utils.book_new(),now=new Date(),ds=now.toLocaleDateString('vi-VN'),my=nowMonthYear();
+  var id=[['EMBASSY LANGUAGE - BAO CAO TON KHO VAT PHAM'],['Ngay xuat: '+ds],['']];
+  id.push(['#','Danh muc','Vat pham','DVT','Chi nhanh','Tong nhap','Tong xuat','Ton kho','Don gia FIFO','Gia tri ton','Nguong alert','Trang thai']);
+  var n=1;DB.items.forEach(function(item){var cat=DB.categories.find(function(c){return c.id===item.catId;});DB.branches.forEach(function(branch){var ti=getTotalImported(item.id,branch.id),te=getTotalExported(item.id,branch.id);if(ti===0&&te===0)return;var stock=getFIFOStock(item.id,branch.id),alert=isAlert(item,branch.id),th=getAlertThreshold(item,branch.id);id.push([n++,cat?cat.name:'',item.name,item.unit,branch.code+' - '+branch.name,ti,te,stock.qty,Math.round(stock.avgPrice),Math.round(stock.value),th,stock.qty===0?'Het hang':alert?'CANH BAO':'Binh thuong']);});});
+  var wi=XLSX.utils.aoa_to_sheet(id);wi['!cols']=[{wch:4},{wch:16},{wch:22},{wch:6},{wch:18},{wch:10},{wch:10},{wch:10},{wch:14},{wch:14},{wch:12},{wch:14}];XLSX.utils.book_append_sheet(wb,wi,'Ton kho');
+  var impd=[['LICH SU NHAP HANG - '+ds],['']];impd.push(['#','Ngay','Chi nhanh','Danh muc','Vat pham','SL','Don gia','Thanh tien','VAT%','Tien VAT','Tong TT','Phi VC','Nha cung cap','MST','SDT','Ghi chu']);
+  DB.imports.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(imp,i){var item=DB.items.find(function(it){return it.id===imp.itemId;}),branch=DB.branches.find(function(b){return b.id===imp.branchId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null;impd.push([i+1,imp.date,branch?branch.code+' - '+branch.name:'',cat?cat.name:'',item?item.name:'',imp.qty,imp.unitPrice,imp.subtotal,imp.vatPct+'%',imp.vatAmt,imp.total,imp.shipping||0,imp.supplierName||'',imp.supplierTax||'',imp.supplierPhone||'',imp.note||'']);});
+  var wim=XLSX.utils.aoa_to_sheet(impd);wim['!cols']=[{wch:4},{wch:12},{wch:18},{wch:14},{wch:22},{wch:6},{wch:12},{wch:14},{wch:6},{wch:12},{wch:14},{wch:12},{wch:22},{wch:14},{wch:14},{wch:20}];XLSX.utils.book_append_sheet(wb,wim,'Nhap hang');
+  var expd=[['LICH SU XUAT HANG - '+ds],['']];expd.push(['#','Ngay','Chi nhanh','Danh muc','Vat pham','Loai xuat','SL','Don gia','Thanh tien','CN nhan','Ghi chu']);
+  var tl={gift:'Xuat tang',sell:'Xuat ban',transfer:'Xuat chuyen CN',dispose:'Xuat bo'};
+  DB.exports.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).forEach(function(exp,i){var item=DB.items.find(function(it){return it.id===exp.itemId;}),branch=DB.branches.find(function(b){return b.id===exp.branchId;}),cat=item?DB.categories.find(function(c){return c.id===item.catId;}):null,trB=exp.transferTo?DB.branches.find(function(b){return b.id===exp.transferTo;}):null;expd.push([i+1,exp.date,branch?branch.code+' - '+branch.name:'',cat?cat.name:'',item?item.name:'',tl[exp.type]||exp.type,exp.qty,exp.unitPrice,exp.total,trB?trB.code:'',exp.note||'']);});
+  var wex=XLSX.utils.aoa_to_sheet(expd);wex['!cols']=[{wch:4},{wch:12},{wch:18},{wch:14},{wch:22},{wch:16},{wch:6},{wch:14},{wch:14},{wch:18},{wch:20}];XLSX.utils.book_append_sheet(wb,wex,'Xuat hang');
+  DB.branches.forEach(function(branch){var rows=buildBranchRows(branch.id);if(rows.length===0)return;var sd=[['BAO CAO CHI NHANH: '+branch.code+' - '+branch.name],['Phap nhan: '+branch.entityName],['Ngay: '+ds],['']];sd.push(['Danh muc','Vat pham','DVT','Tong nhap','Xuat tang','Xuat ban','Xuat chuyen','Xuat bo','Tong xuat','Ton kho','Don gia FIFO','Gia tri ton']);rows.forEach(function(r){sd.push([r.cat?r.cat.name:'',r.item.name,r.item.unit,r.totalImp,r.expByType.gift,r.expByType.sell,r.expByType.transfer,r.expByType.dispose,r.totalExp,r.stock.qty,Math.round(r.stock.avgPrice),Math.round(r.stock.value)]);});sd.push(['TONG CONG','','',rows.reduce(function(s,r){return s+r.totalImp;},0),rows.reduce(function(s,r){return s+r.expByType.gift;},0),rows.reduce(function(s,r){return s+r.expByType.sell;},0),rows.reduce(function(s,r){return s+r.expByType.transfer;},0),rows.reduce(function(s,r){return s+r.expByType.dispose;},0),rows.reduce(function(s,r){return s+r.totalExp;},0),rows.reduce(function(s,r){return s+r.stock.qty;},0),'',Math.round(rows.reduce(function(s,r){return s+r.stock.value;},0))]);var ws=XLSX.utils.aoa_to_sheet(sd);ws['!cols']=[{wch:16},{wch:22},{wch:6},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:10},{wch:10},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws,'CN_'+branch.code);});
+  var eb=DB.branches.filter(function(b){return b.entity==='embassy-english';}),sumd=[['TONG HOP CONG TY CP EMBASSY ENGLISH ('+eb.map(function(b){return b.code;}).join('+')+')'],['Ngay: '+ds],['']],hdr=['Danh muc','Vat pham','DVT','Tong nhap','Xuat tang','Xuat ban','Xuat chuyen','Xuat bo','Tong xuat'];eb.forEach(function(b){hdr.push('Ton '+b.code);});hdr.push('Tong ton','Gia tri ton');sumd.push(hdr);
+  var sr=[];DB.categories.forEach(function(cat){DB.items.filter(function(i){return i.catId===cat.id;}).forEach(function(item){var ha=false,bb={};eb.forEach(function(branch){var ti=getTotalImported(item.id,branch.id),te=getTotalExported(item.id,branch.id),stock=getFIFOStock(item.id,branch.id),ebt={gift:0,sell:0,transfer:0,dispose:0};DB.exports.filter(function(e){return e.itemId===item.id&&e.branchId===branch.id;}).forEach(function(e){ebt[e.type]=(ebt[e.type]||0)+e.qty;});bb[branch.id]={ti:ti,te:te,stock:stock,ebt:ebt};if(ti>0||te>0)ha=true;});if(!ha)return;var ai=eb.reduce(function(s,b){return s+bb[b.id].ti;},0),ag=eb.reduce(function(s,b){return s+bb[b.id].ebt.gift;},0),as=eb.reduce(function(s,b){return s+bb[b.id].ebt.sell;},0),at=eb.reduce(function(s,b){return s+bb[b.id].ebt.transfer;},0),ad=eb.reduce(function(s,b){return s+bb[b.id].ebt.dispose;},0),ae=eb.reduce(function(s,b){return s+bb[b.id].te;},0),aq=eb.reduce(function(s,b){return s+bb[b.id].stock.qty;},0),av=eb.reduce(function(s,b){return s+bb[b.id].stock.value;},0);var row=[cat.name,item.name,item.unit,ai,ag,as,at,ad,ae];eb.forEach(function(b){row.push(bb[b.id].stock.qty);});row.push(aq,Math.round(av));sumd.push(row);sr.push({ai:ai,ag:ag,as:as,at:at,ad:ad,ae:ae,aq:aq,av:av,bb:bb});});});
+  var tr=['TONG CONG','','',sr.reduce(function(s,r){return s+r.ai;},0),sr.reduce(function(s,r){return s+r.ag;},0),sr.reduce(function(s,r){return s+r.as;},0),sr.reduce(function(s,r){return s+r.at;},0),sr.reduce(function(s,r){return s+r.ad;},0),sr.reduce(function(s,r){return s+r.ae;},0)];eb.forEach(function(b){tr.push(sr.reduce(function(s,r){return s+r.bb[b.id].stock.qty;},0));});tr.push(sr.reduce(function(s,r){return s+r.aq;},0),Math.round(sr.reduce(function(s,r){return s+r.av;},0)));sumd.push(tr);
+  var ws2=XLSX.utils.aoa_to_sheet(sumd);ws2['!cols']=[{wch:16},{wch:22},{wch:6},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:14}];XLSX.utils.book_append_sheet(wb,ws2,'TH_Embassy_English');
+  var fn='Embassy_TonKho_'+my.replace('/','_')+'.xlsx';XLSX.writeFile(wb,fn);showToast('Da xuat file Excel: '+fn,'success');
+}
+
+function exportPDF(mode){
+  var doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),now=new Date(),ds=now.toLocaleDateString('vi-VN'),my=nowMonthYear(),pw=doc.internal.pageSize.getWidth();
+  function addHeader(title){doc.setFillColor(26,46,90);doc.rect(0,0,pw,18,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text('EMBASSY LANGUAGE',10,8);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(title,10,14);doc.setFontSize(9);doc.text('Ngay xuat: '+ds,pw-10,14,{align:'right'});doc.setTextColor(0,0,0);}
+  addHeader('BAO CAO TON KHO VAT PHAM - '+my);
+  var ir=[];DB.items.forEach(function(item){var cat=DB.categories.find(function(c){return c.id===item.catId;});DB.branches.forEach(function(branch){var ti=getTotalImported(item.id,branch.id),te=getTotalExported(item.id,branch.id);if(ti===0&&te===0)return;var stock=getFIFOStock(item.id,branch.id),alert=isAlert(item,branch.id);ir.push([cat?cat.name:'',item.name,branch.code,String(ti),String(te),String(stock.qty)+' '+item.unit,stock.avgPrice>0?Number(Math.round(stock.avgPrice)).toLocaleString('vi-VN'):'-',stock.value>0?Number(Math.round(stock.value)).toLocaleString('vi-VN'):'-',stock.qty===0?'Het hang':alert?'CANH BAO':'OK']);});});
+  doc.autoTable({startY:22,head:[['Danh muc','Vat pham','CN','Nhap','Xuat','Ton kho','Don gia FIFO','Gia tri ton','Trang thai']],body:ir,styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[26,46,90],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[248,249,252]},didParseCell:function(data){if(data.section==='body'&&data.column.index===8){if(data.cell.raw==='CANH BAO'){data.cell.styles.textColor=[232,25,44];data.cell.styles.fontStyle='bold';}else if(data.cell.raw==='Het hang'){data.cell.styles.textColor=[232,25,44];}else{data.cell.styles.textColor=[22,163,74];}}},margin:{left:8,right:8}});
+  doc.addPage();addHeader('LICH SU NHAP HANG');
+  var impr=DB.imports.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).map(function(imp){var item=DB.items.find(function(i){return i.id===imp.itemId;}),branch=DB.branches.find(function(b){return b.id===imp.branchId;});return[imp.date,branch?branch.code:'',item?item.name:'',String(imp.qty),Number(imp.unitPrice).toLocaleString('vi-VN'),Number(imp.total).toLocaleString('vi-VN'),imp.vatPct+'%',imp.supplierName||'-'];});
+  doc.autoTable({startY:22,head:[['Ngay','CN','Vat pham','SL','Don gia','Tong TT','VAT','Nha cung cap']],body:impr,styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[26,46,90],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[248,249,252]},margin:{left:8,right:8}});
+  doc.addPage();addHeader('LICH SU XUAT HANG');
+  var tl2={gift:'Tang',sell:'Ban',transfer:'Chuyen CN',dispose:'Bo'};
+  var expr=DB.exports.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).map(function(exp){var item=DB.items.find(function(i){return i.id===exp.itemId;}),branch=DB.branches.find(function(b){return b.id===exp.branchId;}),trB=exp.transferTo?DB.branches.find(function(b){return b.id===exp.transferTo;}):null;return[exp.date,branch?branch.code:'',item?item.name:'',tl2[exp.type]||exp.type,String(exp.qty),Number(exp.unitPrice).toLocaleString('vi-VN'),Number(exp.total).toLocaleString('vi-VN'),trB?trB.code:'-'];});
+  doc.autoTable({startY:22,head:[['Ngay','CN','Vat pham','Loai xuat','SL','Don gia','Thanh tien','CN nhan']],body:expr,styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[26,46,90],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[248,249,252]},margin:{left:8,right:8}});
+  var pc=doc.internal.getNumberOfPages();for(var i=1;i<=pc;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150);doc.text('Embassy Language - Bao cao ton kho '+my+' | Trang '+i+'/'+pc,pw/2,doc.internal.pageSize.getHeight()-5,{align:'center'});}
+  var fn='Embassy_TonKho_'+my.replace('/','_')+'.pdf';doc.save(fn);showToast('Da xuat file PDF: '+fn,'success');
+}
+
+
+// ============================================================
+// GS SETTINGS LOCK / UNLOCK
+// ============================================================
+var GS_ADMIN_PWD_HASH = null; // Will be set from settings
+
+function hashPwd(pwd) {
+  // Simple hash for client-side (not cryptographic, just obfuscation)
+  var h = 0;
+  for (var i = 0; i < pwd.length; i++) {
+    h = ((h << 5) - h) + pwd.charCodeAt(i);
+    h = h & h;
+  }
+  return String(Math.abs(h));
+}
+
+function unlockGS() {
+  var pwd = document.getElementById('gsAdminPwd').value;
+  if (!pwd) { showToast('Vui long nhap mat khau', 'error'); return; }
+  var storedHash = DB.settings.gsAdminHash;
+  // If no password set yet, first time setup
+  if (!storedHash) {
+    // First time: set the password
+    if (pwd.length < 4) { showToast('Mat khau phai co it nhat 4 ky tu', 'error'); return; }
+    DB.settings.gsAdminHash = hashPwd(pwd);
+    saveToStorage();
+    showGSContent();
+    showToast('Da thiet lap mat khau admin thanh cong!', 'success');
+    return;
+  }
+  if (hashPwd(pwd) === storedHash) {
+    showGSContent();
+    document.getElementById('gsAdminPwd').value = '';
+    document.getElementById('gsLockError').style.display = 'none';
+  } else {
+    document.getElementById('gsLockError').style.display = 'block';
+    document.getElementById('gsAdminPwd').value = '';
+    document.getElementById('gsAdminPwd').focus();
+  }
+}
+
+function showGSContent() {
+  document.getElementById('gsLockOverlay').style.display = 'none';
+  document.getElementById('gsContent').style.display = 'block';
+  document.getElementById('gsLockBadge').textContent = '🔓 Da mo khoa';
+  document.getElementById('gsLockBadge').style.background = 'var(--green-light)';
+  document.getElementById('gsLockBadge').style.color = 'var(--green)';
+}
+
+function lockGS() {
+  document.getElementById('gsLockOverlay').style.display = 'block';
+  document.getElementById('gsContent').style.display = 'none';
+  document.getElementById('gsLockBadge').textContent = '🔒 Khoa';
+  document.getElementById('gsLockBadge').style.background = '#fee2e2';
+  document.getElementById('gsLockBadge').style.color = 'var(--red)';
+  document.getElementById('gsAdminPwd').value = '';
+  document.getElementById('gsLockError').style.display = 'none';
+}
+
+function updateGSLockHint() {
+  var overlay = document.getElementById('gsLockOverlay');
+  if (!overlay) return;
+  var storedHash = DB.settings.gsAdminHash;
+  var hint = overlay.querySelector('.gs-lock-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'gs-lock-hint';
+    hint.style.cssText = 'font-size:11px;color:var(--orange);margin-top:6px;font-style:italic';
+    overlay.appendChild(hint);
+  }
+  if (!storedHash) {
+    hint.textContent = '⚠️ Chua co mat khau. Nhap mat khau moi de thiet lap lan dau.';
+  } else {
+    hint.textContent = '';
+  }
+}
+
+function changeGSPassword() {
+  var oldPwd = prompt('Nhap mat khau hien tai:');
+  if (!oldPwd) return;
+  if (hashPwd(oldPwd) !== DB.settings.gsAdminHash) { showToast('Mat khau hien tai khong dung', 'error'); return; }
+  var newPwd = prompt('Nhap mat khau moi (it nhat 4 ky tu):');
+  if (!newPwd || newPwd.length < 4) { showToast('Mat khau moi phai co it nhat 4 ky tu', 'error'); return; }
+  var confirmPwd = prompt('Xac nhan mat khau moi:');
+  if (newPwd !== confirmPwd) { showToast('Mat khau xac nhan khong khop', 'error'); return; }
+  DB.settings.gsAdminHash = hashPwd(newPwd);
+  saveToStorage();
+  showToast('Da doi mat khau admin thanh cong!', 'success');
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  if(!loadFromStorage())initData();
+  applyHardcodedGSConfig();
+  if(!DB.entities||!DB.entities.length){DB.entities=[{id:'embassy-english',name:'Cong ty CP Embassy English'},{id:'embassy-cam-ranh',name:'Cong ty CP Embassy Cam Ranh'},{id:'embassy-tuy-hoa',name:'Cong ty CP Embassy Tuy Hoa'},{id:'embassy-gia-lai',name:'Cong ty CP Embassy Gia Lai'}];saveToStorage();}
+  if(!DB.priceHistory){DB.priceHistory={};saveToStorage();}
+  checkAlerts();renderDashboard();setInterval(checkMonthlyExport,60000);
+  // Auto-load from Google Sheets on startup + bat dong bo dinh ky
+  autoLoadFromGS();
+  startGSPolling();
+});
+</script>
+</body>
+</html>
